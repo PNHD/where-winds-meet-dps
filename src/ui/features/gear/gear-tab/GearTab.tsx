@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { BestBuildPanel } from "./BestBuildPanel"
 import type { EquippedSlots, GearPiece, GearSlot, Inputs } from "../../../../engine/types"
 import { GEAR_SLOTS } from "../../../../engine/types"
 import { useI18n } from "../../../../i18n/i18nContext"
@@ -27,6 +28,8 @@ import type { HeirloomProfile } from "../../../../engine/heirloom"
 import styles from "./GearTab.module.scss"
 
 interface Props {
+  optimizerInputs?: Inputs
+  profileId?: string
   inputs: Inputs
   engineInputs: Inputs
   customGraduationBuild: CustomGraduationBuild | null
@@ -35,6 +38,8 @@ interface Props {
 }
 
 export function GearTab({
+  optimizerInputs,
+  profileId,
   inputs,
   engineInputs,
   customGraduationBuild,
@@ -272,16 +277,24 @@ export function GearTab({
                 <GearAnalysisPanel engineInputs={engineInputs} currentDps={currentDps} />
               )}
               {sub === "inventory" && (
-                <GearInventoryPanel
-                  rows={visibleRows}
-                  profile={heirloomProfile}
-                  selectedPieceId={liveSelectedPieceId}
-                  onSelect={selectInventoryRow}
-                  slotFilter={selectedSlot}
-                  onClearSlotFilter={() => setSelectedSlot(null)}
-                  dpsDeltas={inventoryDeltas.deltas}
-                  dpsDeltasPending={inventoryDeltas.isPending}
-                />
+                <>
+                  <BestBuildPanel
+                    inputs={inputs}
+                    optimizerInputs={optimizerInputs ?? engineInputs}
+                    profileId={profileId}
+                    onChange={onChange}
+                  />
+                  <GearInventoryPanel
+                    rows={visibleRows}
+                    profile={heirloomProfile}
+                    selectedPieceId={liveSelectedPieceId}
+                    onSelect={selectInventoryRow}
+                    slotFilter={selectedSlot}
+                    onClearSlotFilter={() => setSelectedSlot(null)}
+                    dpsDeltas={inventoryDeltas.deltas}
+                    dpsDeltasPending={inventoryDeltas.isPending}
+                  />
+                </>
               )}
             </SubTabPanel>
           </div>

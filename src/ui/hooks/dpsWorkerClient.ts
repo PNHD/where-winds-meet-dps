@@ -22,6 +22,7 @@ const PROGRESS_OWNER_KIND: Partial<Record<ResponseKind, RequestKind>> = {
   parseSimulationProgress: "parseSimulation",
 }
 const CANCEL_KIND_BY_KIND: Partial<Record<RequestKind, RequestKind>> = {
+  bestBuild: "bestBuildCancel",
   parseSimulation: "parseSimulationCancel",
 }
 const SELF_REPORTING_KINDS = new Set<RequestKind>(Object.values(PROGRESS_OWNER_KIND))
@@ -249,6 +250,10 @@ function abandonRequests(kind: RequestKind, state: KindState): void {
   dropQueued(state)
   state.awaitedReqId = null
   state.lastDeliveredReqId = state.latestReqId
+  if (kind === "bestBuild") {
+    state.retained = null
+    state.retainedReqId = state.latestReqId
+  }
   setPending(state, false)
 }
 
@@ -292,6 +297,10 @@ export function postToDpsWorker(unsent: UnsentRequest): void {
 
 export function cancelDpsWorkerRequest(kind: RequestKind): void {
   const state = stateFor(kind)
+  if (kind === "bestBuild") {
+    abandonRequests(kind, state)
+    return
+  }
   dropQueued(state)
   postCancel(kind, state)
 }

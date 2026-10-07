@@ -440,6 +440,8 @@ function AppInner() {
               path="/gear"
               element={
                 <GearTab
+                  optimizerInputs={configuredInputs}
+                  profileId={committed.activeId}
                   inputs={inputs}
                   engineInputs={engineInputs}
                   customGraduationBuild={customGraduationBuild}
