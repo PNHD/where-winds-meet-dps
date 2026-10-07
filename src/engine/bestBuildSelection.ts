@@ -2,6 +2,7 @@ import { GEAR_WORD_IDS } from "../data/stats/statLines"
 import { getAttunement } from "./attunements"
 import { GEAR_LEVELS, GEAR_RARITIES, GEAR_SLOTS } from "./types"
 import type { EquippedSlots, GearPiece, Inputs } from "./types"
+import type { BestBuildAdvice } from "./bestBuildAdvisor"
 
 export type BestBuildError =
   "missing-slots" | "duplicate-id" | "invalid-equipped" | "no-rotation" | "engine-error"
@@ -17,6 +18,7 @@ export type BestBuildResult =
       combinations: number
       evaluated: number
       excludedCandidates: number
+      advice?: BestBuildAdvice
     }
 
 export function validBestBuildPiece(piece: GearPiece): boolean {

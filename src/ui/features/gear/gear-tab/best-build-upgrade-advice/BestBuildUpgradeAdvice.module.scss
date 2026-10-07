@@ -1,0 +1,32 @@
+@use "breakpoints";
+
+.items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+.item {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-wrap: anywhere;
+
+  summary {
+    cursor: pointer;
+
+    span {
+      display: block;
+      margin-top: 6px;
+      color: var(--color-text-muted);
+    }
+  }
+}
+
+@include breakpoints.below(breakpoints.$bp-900) {
+  .items {
+    grid-template-columns: 1fr;
+  }
+}

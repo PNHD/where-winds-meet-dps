@@ -150,13 +150,19 @@ export function RetunementAnalyzerPanel({ piece, profile, rows, reason, isPendin
     )
   }
 
-  if (reason === "no-pool") {
+  if (reason === "no-pool" || reason === "spent") {
     return (
       <div className={`panel ${retunement.panel}`}>
         <div className="toolbar">
           <span className="toolbar-label">{t("common.retunement")}</span>
         </div>
-        <div className="hint">{t("gear.retunementAnalyzer.noRetunementDataForThis")}</div>
+        <div className="hint">
+          {t(
+            reason === "spent"
+              ? "gear.retuneBudget.spent"
+              : "gear.retunementAnalyzer.noRetunementDataForThis",
+          )}
+        </div>
       </div>
     )
   }

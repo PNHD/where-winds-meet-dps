@@ -3,16 +3,19 @@ import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone, relayedCapValue } from "./gearStats"
 import { computeRanking, getWordSpecs } from "./itemRanking"
 import { computeGearAnalysis, type GearSlotAnalysisRow } from "./gearAnalysis"
-import { attributeForClass, poolForClass } from "../definitions/classes/registry"
+import { probLinearImprove } from "./retunement"
 import {
-  annotatePoolForSlot,
-  probLinearImprove,
-  rerollableSlots,
-  retuneLineOutcome,
-  retunePoolChoices,
-} from "./retunement"
-import { retuneWeightPool, type RetuneLine } from "../data/stats/gearRetuneWeights"
-import { GEAR_WORD_UNIT } from "../data/stats/statLines"
+  computeRetunement,
+  inputsWithSlotEmpty,
+  type RetunementWorkerRequest,
+  type RetunementWorkerResponse,
+} from "./retunementAnalysis"
+export type {
+  RetunementRow,
+  RetunementWorkerRequest,
+  RetunementWorkerResponse,
+} from "./retunementAnalysis"
+import { analyzeBestBuild } from "./bestBuildAdvisor"
 import { reattunementPool } from "../data/stats/gearReattunementWeights"
 import {
   expectedFreshValue,
@@ -37,7 +40,6 @@ import type { Rotation } from "./rotation"
 import type { Skill } from "./skill"
 import type { Buff } from "./buff"
 import type { Debuff } from "./debuff"
-import type { RetunementPool } from "../definitions/classes/classDef"
 import { RUN_SEED_STRIDE } from "./rng"
 import type { HitOutcome } from "./formula"
 import { GEAR_SLOTS } from "./types"
@@ -46,7 +48,6 @@ import type {
   BowSet,
   GearPiece,
   GearSlot,
-  GearWordId,
   Inputs,
   ItemRankingRow,
   OutcomeCounts,
@@ -159,187 +160,6 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
   }
 
   return { reqId: req.reqId, deltas: out }
-}
-
-export interface RetunementWorkerRequest {
-  reqId: number
-  inputs: Inputs
-  pieceId: string
-}
-
-export interface RetunementRow {
-  slotIndex: number
-  word: GearWordId
-  legal: boolean
-  isCurrent: boolean
-  deltaDps: number
-  // The same swap with every word on the piece — the candidate included —
-  // relayed to its 94 % cap, measured against that same relayed piece.
-  deltaDpsRelayed: number
-  poolSize: number
-  // null where no weighted pool exists yet for this gear level (86, 91).
-  pDraw: number | null
-  pImprove: number | null
-  eDeltaDps: number | null
-}
-
-export interface RetunementWorkerResponse {
-  reqId: number
-  pieceId: string
-  rows: RetunementRow[]
-  reason: "ok" | "no-piece" | "no-pool" | "relayed"
-}
-
-function inputsWithSlotEmpty(inputs: Inputs, slot: GearSlot): Inputs {
-  const equippedId = inputs.equipped[slot]
-  if (!equippedId) return inputs
-  const equippedPiece = inputs.inventory.find((p) => p.id === equippedId)
-  if (!equippedPiece) return inputs
-  return applyPieceContribution(inputs, equippedPiece, -1)
-}
-
-function retunementDpsHelpers(inputs: Inputs, piece: GearPiece) {
-  const slotEmpty = inputsWithSlotEmpty(inputs, piece.slot)
-  const equipDps = runEngine(applyPieceContribution(slotEmpty, piece, +1)).dps
-  const relayedPiece = maxRelayedClone(piece, inputs, piece.level)
-  const relayedDps = runEngine(applyPieceContribution(slotEmpty, relayedPiece, +1)).dps
-
-  const dpsWithWord = (from: GearPiece, slotIndex: number, word: GearWordId, value: number) => {
-    const words = from.words.map((existing, index) =>
-      index === slotIndex ? { word, value, retuned: true } : existing,
-    ) as GearPiece["words"]
-    return runEngine(applyPieceContribution(slotEmpty, { ...from, words }, +1)).dps
-  }
-
-  return { equipDps, relayedPiece, relayedDps, dpsWithWord }
-}
-
-function computeLegacyRetunement(
-  req: RetunementWorkerRequest,
-  piece: GearPiece,
-  pool: RetunementPool,
-): RetunementWorkerResponse {
-  const { inputs, pieceId } = req
-  const specs = getWordSpecs(inputs, piece.level)
-  const specByWord = new Map(specs.map((s) => [s.word, s] as const))
-  const rows: RetunementRow[] = []
-  const slots = rerollableSlots(piece)
-  const { equipDps, relayedPiece, relayedDps, dpsWithWord } = retunementDpsHelpers(inputs, piece)
-
-  for (const slotIndex of slots) {
-    const annotated = annotatePoolForSlot(piece, slotIndex, pool)
-    for (const { word, legal, isCurrent } of annotated) {
-      if (!legal) {
-        rows.push({
-          slotIndex,
-          word,
-          legal: false,
-          isCurrent: false,
-          deltaDps: 0,
-          deltaDpsRelayed: 0,
-          poolSize: pool.stats.length,
-          pDraw: null,
-          pImprove: null,
-          eDeltaDps: null,
-        })
-        continue
-      }
-      const spec = specByWord.get(word)
-      if (!spec) {
-        rows.push({
-          slotIndex,
-          word,
-          legal: true,
-          isCurrent,
-          deltaDps: 0,
-          deltaDpsRelayed: 0,
-          poolSize: pool.stats.length,
-          pDraw: null,
-          pImprove: null,
-          eDeltaDps: null,
-        })
-        continue
-      }
-      const cappedValue = relayedCapValue(spec.amount, spec.unit)
-      rows.push({
-        slotIndex,
-        word,
-        legal: true,
-        isCurrent,
-        deltaDps: dpsWithWord(piece, slotIndex, word, spec.amount) - equipDps,
-        deltaDpsRelayed: dpsWithWord(relayedPiece, slotIndex, word, cappedValue) - relayedDps,
-        poolSize: pool.stats.length,
-        pDraw: null,
-        pImprove: null,
-        eDeltaDps: null,
-      })
-    }
-  }
-
-  return { reqId: req.reqId, pieceId, rows, reason: "ok" }
-}
-
-function computeWeightedRetunement(
-  req: RetunementWorkerRequest,
-  piece: GearPiece,
-  weightPool: readonly RetuneLine[],
-): RetunementWorkerResponse {
-  const { inputs, pieceId } = req
-  const rows: RetunementRow[] = []
-  const slots = rerollableSlots(piece)
-  const { equipDps, relayedPiece, relayedDps, dpsWithWord } = retunementDpsHelpers(inputs, piece)
-
-  const choices = retunePoolChoices(piece, weightPool).filter(
-    (choice) => !choice.deselected && !choice.onRerollableLine,
-  )
-  const lineByWord = new Map(weightPool.map((line) => [line.word, line] as const))
-
-  for (const slotIndex of slots) {
-    for (const { word, pDraw } of choices) {
-      const line = lineByWord.get(word)
-      if (!line) continue
-      const outcome = retuneLineOutcome(line, piece.rarity, equipDps, (value) =>
-        dpsWithWord(piece, slotIndex, word, value),
-      )
-      const maxValue = line.bands[2].max
-      const relayedMaxValue = relayedCapValue(maxValue, GEAR_WORD_UNIT[word])
-      rows.push({
-        slotIndex,
-        word,
-        legal: true,
-        isCurrent: false,
-        deltaDps: dpsWithWord(piece, slotIndex, word, maxValue) - equipDps,
-        deltaDpsRelayed: dpsWithWord(relayedPiece, slotIndex, word, relayedMaxValue) - relayedDps,
-        poolSize: weightPool.length,
-        pDraw,
-        pImprove: outcome.pImprove,
-        eDeltaDps: pDraw * outcome.eDeltaDpsGivenDrawn,
-      })
-    }
-  }
-
-  return { reqId: req.reqId, pieceId, rows, reason: "ok" }
-}
-
-function computeRetunement(req: RetunementWorkerRequest): RetunementWorkerResponse {
-  const { inputs, pieceId } = req
-  const piece = inputs.inventory.find((p) => p.id === pieceId)
-  if (!piece) {
-    return { reqId: req.reqId, pieceId, rows: [], reason: "no-piece" }
-  }
-  if (piece.relayed) {
-    return { reqId: req.reqId, pieceId, rows: [], reason: "relayed" }
-  }
-
-  const attribute = attributeForClass(inputs.classId)
-  const weightPool = attribute ? retuneWeightPool(attribute, piece.level, piece.slot) : null
-  if (weightPool) return computeWeightedRetunement(req, piece, weightPool)
-
-  const pool = poolForClass(inputs.classId)
-  if (!pool || pool.stats.length === 0) {
-    return { reqId: req.reqId, pieceId, rows: [], reason: "no-pool" }
-  }
-  return computeLegacyRetunement(req, piece, pool)
 }
 
 export interface ReattunementWorkerRequest {
@@ -937,7 +757,13 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   } else if (req.kind === "bestBuild") {
     activeBestBuildIds.add(req.reqId)
     void findBestBuild(req.inputs, { cancelled: () => cancelledReqIds.has(req.reqId) }).then(
-      (result) => {
+      async (result) => {
+        if (result.status === "ok") {
+          const advice = await analyzeBestBuild(req.inputs, result, () =>
+            cancelledReqIds.has(req.reqId),
+          )
+          result = advice.status === "cancelled" ? { status: "cancelled" } : { ...result, advice }
+        }
         activeBestBuildIds.delete(req.reqId)
         cancelledReqIds.delete(req.reqId)
         ;(self as unknown as Worker).postMessage({
