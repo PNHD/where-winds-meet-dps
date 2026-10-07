@@ -1,3 +1,4 @@
+import { findBestBuild, type BestBuildResult } from "./bestBuild"
 import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone, relayedCapValue } from "./gearStats"
 import { computeRanking, getWordSpecs } from "./itemRanking"
@@ -892,6 +893,8 @@ function computeGraduation(req: GraduationWorkerRequest): GraduationWorkerRespon
 }
 
 export type WorkerRequest =
+  | { kind: "bestBuild"; reqId: number; inputs: Inputs; sourceKey: string }
+  | { kind: "bestBuildCancel"; reqId: number }
   | ({ kind: "dpsDeltas" } & DpsWorkerRequest)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerRequest)
   | ({ kind: "retunement" } & RetunementWorkerRequest)
@@ -908,6 +911,7 @@ export type WorkerRequest =
   | ({ kind: "graduation" } & GraduationWorkerRequest)
 
 export type WorkerResponse =
+  | { kind: "bestBuild"; reqId: number; sourceKey: string; result: BestBuildResult }
   | ({ kind: "dpsDeltas" } & DpsWorkerResponse)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerResponse)
   | ({ kind: "retunement" } & RetunementWorkerResponse)
@@ -924,10 +928,27 @@ export type WorkerResponse =
   | ({ kind: "graduation" } & GraduationWorkerResponse)
 
 const cancelledReqIds = new Set<number>()
+const activeBestBuildIds = new Set<number>()
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const req = e.data
-  if (req.kind === "dpsDeltas") {
+  if (req.kind === "bestBuildCancel") {
+    if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
+  } else if (req.kind === "bestBuild") {
+    activeBestBuildIds.add(req.reqId)
+    void findBestBuild(req.inputs, { cancelled: () => cancelledReqIds.has(req.reqId) }).then(
+      (result) => {
+        activeBestBuildIds.delete(req.reqId)
+        cancelledReqIds.delete(req.reqId)
+        ;(self as unknown as Worker).postMessage({
+          kind: "bestBuild",
+          reqId: req.reqId,
+          sourceKey: req.sourceKey,
+          result,
+        })
+      },
+    )
+  } else if (req.kind === "dpsDeltas") {
     const res = computeDpsDeltas(req)
     ;(self as unknown as Worker).postMessage({ kind: "dpsDeltas", ...res })
   } else if (req.kind === "equippedDeltas") {
