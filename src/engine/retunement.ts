@@ -47,7 +47,8 @@ export function filterPoolForSlot(
   const candidates: GearWordId[] = []
   for (const stat of pool.stats) {
     const have = others.get(stat) ?? 0
-    if (have <= maxAllowedFor(stat, firstStat)) candidates.push(stat)
+    if (have <= maxAllowedFor(stat, firstStat) && !retunedOutWordsOf(piece).has(stat))
+      candidates.push(stat)
   }
   return { slotIndex, candidates, poolSize: pool.stats.length }
 }
@@ -64,7 +65,7 @@ export function annotatePoolForSlot(
     const have = others.get(word) ?? 0
     return {
       word,
-      legal: have <= maxAllowedFor(word, firstStat),
+      legal: have <= maxAllowedFor(word, firstStat) && !retunedOutWordsOf(piece).has(word),
       isCurrent: word === currentWord,
     }
   })
@@ -121,6 +122,13 @@ export type RetuneAttemptBudget = "single" | "repeatable"
 // repeatable (subject to an in-game cooldown this app does not model).
 export function retuneAttemptBudget(level: GearLevel): RetuneAttemptBudget {
   return level <= 86 ? "single" : "repeatable"
+}
+
+export function retuneAttemptSpent(piece: GearPiece): boolean {
+  return (
+    retuneAttemptBudget(piece.level) === "single" &&
+    ALL_REROLLABLE_SLOTS.some((index) => piece.words[index]?.retuned)
+  )
 }
 
 function bandStarWeight(band: RetuneBand, rarity: GearRarity): number {

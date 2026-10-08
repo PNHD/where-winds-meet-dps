@@ -19,3 +19,18 @@
   selected pieces and search metadata before exposing **Equip Best Build**.
 - Equip only on that explicit action. Invalidate replies and previews after changes
   to profile, inventory or rotation, cancellation, or abandonment of the search.
+- Analyze next-action advice on the proposed equipment, retaining all active
+  configuration and rotation context. Reuse Retunement legality, weighted pools,
+  roll outcomes and attempt limits; never maintain a second legality model.
+- Recommend only positive legal next Retunements. Rank by maximum-roll modeled
+  gain; identify that roll assumption, keep draw and conditional improve chances
+  distinct, and label any probability-weighted expectation as this target's
+  contribution per draw, never the whole draw's gain or a guaranteed gain.
+  Leave unavailable probabilities unknown.
+- Preserve heirloom guidance. Protect existing heirlooms and exclude relayed or
+  exhausted single-attempt pieces from actionable upgrade recommendations.
+- Keep advice within the search request's worker, cancellation and source-key
+  lifecycle. Never mutate gear or retain advice after material inputs change.
+- Compare slot alternatives only with the other seven proposed slots fixed.
+  Label the signed selected-minus-replacement gap as local sensitivity, never as
+  independent slot optimality; an approximate result may have a negative gap.

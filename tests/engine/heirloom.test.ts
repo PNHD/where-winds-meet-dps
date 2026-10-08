@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { classDefinition } from "../../src/definitions/classes/registry"
 import { GEAR_WORD_IDS } from "../../src/data/stats/statLines"
 import { heirloomMatch, heirloomSwapFor, isHeirloom } from "../../src/engine/heirloom"
+import { retuneAttemptSpent } from "../../src/engine/retunement"
 import { newCustomGraduationBuildId } from "../../src/engine/customGraduationBuild"
 import type { CustomGraduationBuild } from "../../src/engine/customGraduationBuild"
 import type { GearPiece, GearWordId } from "../../src/engine/types"
@@ -210,4 +211,21 @@ describe("heirloom — one retune away", () => {
   it("offers no swap for a piece that is already an heirloom", () => {
     expect(heirloomSwapFor(pieceFrom(target, perfect), { classId: SINGLE_BUILD_CLASS })).toBeNull()
   })
+
+  it.each([86, 96] as const)(
+    "respects the level-%i attempt budget without losing heirloom identity",
+    (level) => {
+      const target = helmOf(MULTI_BUILD_CLASS)
+      const piece = structuredClone(target)
+      piece.level = level
+      piece.relayed = false
+      piece.words[2] = { word: "crit", value: 0.03, retuned: true }
+      expect(retuneAttemptSpent(piece)).toBe(level === 86)
+      const match = heirloomMatch(piece, { classId: MULTI_BUILD_CLASS })
+      if (level === 86) expect(match.swap).toBeNull()
+      else expect(match.swap).toEqual({ slotIndex: 2, currentWord: "crit", word: "power" })
+      piece.words[2] = { ...target.words[2], retuned: true }
+      expect(heirloomMatch(piece, { classId: MULTI_BUILD_CLASS }).builds).not.toHaveLength(0)
+    },
+  )
 })

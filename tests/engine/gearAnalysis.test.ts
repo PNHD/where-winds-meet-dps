@@ -4,6 +4,8 @@ import { computeReattunement, computeRetunement } from "../../src/engine/dpsWork
 import { runEngine } from "../../src/engine/dps"
 import { applyPieceContribution, maxRelayedClone } from "../../src/engine/gearStats"
 import { defaultInputs } from "../../src/engine/defaults"
+import { classDefinition } from "../../src/definitions/classes/registry"
+import { retuneAttemptSpent } from "../../src/engine/retunement"
 import { gearLevelForBreakthrough } from "../../src/definitions/baseStats/breakthroughs"
 import type { GearPiece, GearSlot, Inputs } from "../../src/engine/types"
 
@@ -109,6 +111,23 @@ describe("computeGearAnalysis", () => {
     expect(row.retuneGain).toBeNull()
     expect(row.relayGain).toBeNull()
     expect(row.reattuneGain).not.toBeNull()
+  })
+
+  it.each([86, 96] as const)("offers only an available legal next Retune at level %i", (level) => {
+    const target = classDefinition(umbraInputs.classId)!.graduationBuilds[0].gear.find(
+      (entry) => entry.slot === "helm",
+    )!
+    const nearHeirloom = structuredClone(target)
+    nearHeirloom.level = level
+    nearHeirloom.relayed = false
+    nearHeirloom.words[2] = { word: "crit", value: 0.03, retuned: true }
+    const inputs = equip([nearHeirloom])
+    const row = computeGearAnalysis(inputs, runEngine(inputs).dps).find(
+      (entry) => entry.slot === "helm",
+    )!
+    expect(retuneAttemptSpent(nearHeirloom)).toBe(level === 86)
+    if (level === 86) expect(row.retuneGain).toBeNull()
+    else expect(row.retuneGain).toBeGreaterThan(0)
   })
 })
 

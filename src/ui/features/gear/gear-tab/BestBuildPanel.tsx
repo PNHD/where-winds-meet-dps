@@ -4,6 +4,7 @@ import { applyBestBuild } from "../../../../engine/bestBuildSelection"
 import { useI18n } from "../../../../i18n/i18nContext"
 import { useBestBuild } from "../../../hooks/useBestBuild"
 import { GEAR_SLOT_KEYS } from "../shared/gearSlotKeys"
+import { BestBuildUpgradeAdvice } from "./best-build-upgrade-advice/BestBuildUpgradeAdvice"
 
 const ERROR_KEYS = {
   "missing-slots": "gear.bestBuild.missing",
@@ -62,7 +63,7 @@ export function BestBuildPanel({
             {t("gear.bestBuild.evaluated")}: {result.evaluated} / {result.combinations} ·{" "}
             {t("gear.bestBuild.excluded")}: {result.excludedCandidates}
           </p>
-          <ul>
+          <ul aria-label={t("gear.bestBuild.advice.selected")}>
             {GEAR_SLOTS.map((slot) => (
               <li key={slot}>
                 {t(GEAR_SLOT_KEYS[slot])}:{" "}
@@ -86,6 +87,7 @@ export function BestBuildPanel({
           >
             {t("gear.bestBuild.equip")}
           </button>
+          {result.advice && <BestBuildUpgradeAdvice advice={result.advice} inputs={inputs} />}
         </>
       )}
     </section>

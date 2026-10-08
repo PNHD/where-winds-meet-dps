@@ -2,7 +2,7 @@ import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone } from "./gearStats"
 import { getWordSpecs } from "./itemRanking"
 import { poolForClass } from "../definitions/classes/registry"
-import { annotatePoolForSlot, rerollableSlots } from "./retunement"
+import { annotatePoolForSlot, rerollableSlots, retuneAttemptSpent } from "./retunement"
 import { attunementMax, attunementsFor } from "./attunements"
 import { gearLevelForBreakthrough } from "../definitions/baseStats/breakthroughs"
 import { GEAR_SLOTS } from "./types"
@@ -34,7 +34,7 @@ function bestRetuneDps(
   pool: RetunementPool | null,
   inputs: Inputs,
 ): number | null {
-  if (piece.relayed) return null
+  if (piece.relayed || retuneAttemptSpent(piece)) return null
   if (!pool || pool.stats.length === 0) return null
 
   const specByWord = new Map(getWordSpecs(inputs, piece.level).map((spec) => [spec.word, spec]))

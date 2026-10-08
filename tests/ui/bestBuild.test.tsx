@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { defaultInputs } from "../../src/engine/defaults"
 import { EMPTY_EQUIPPED, GEAR_SLOTS } from "../../src/engine/types"
@@ -7,6 +7,11 @@ import type { WorkerRequest, WorkerResponse } from "../../src/engine/dpsWorker"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { BestBuildPanel } from "../../src/ui/features/gear/gear-tab/BestBuildPanel"
 import { retainedResponse } from "../../src/ui/hooks/dpsWorkerClient"
+import type { BestBuildAdvice, BestBuildItemAdvice } from "../../src/engine/bestBuildAdvisor"
+import { analyzeBestBuild } from "../../src/engine/bestBuildAdvisor"
+import { findBestBuild } from "../../src/engine/bestBuild"
+import { classDefinition } from "../../src/definitions/classes/registry"
+import { BestBuildUpgradeAdvice } from "../../src/ui/features/gear/gear-tab/best-build-upgrade-advice/BestBuildUpgradeAdvice"
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
@@ -60,7 +65,32 @@ function pending() {
   )
   return posts.sort((a, b) => b.request.reqId - a.request.reqId)[0]
 }
-function answer(job = pending()) {
+function adviceFixture(): Extract<BestBuildAdvice, { status: "ok" }> {
+  const items: BestBuildItemAdvice[] = GEAR_SLOTS.map((slot) => ({
+    slot,
+    pieceId: slot,
+    reason: slot === "armor" ? "relayed" : "ok",
+    heirloomSwap: null,
+    runnerUp: slot === "helm" ? { pieceId: "helm-backup", dps: 115, gap: 5 } : null,
+    recommendation:
+      slot === "helm"
+        ? {
+            slotIndex: 2,
+            word: "maxPhys",
+            legal: true,
+            isCurrent: false,
+            deltaDps: 183,
+            deltaDpsRelayed: 120,
+            poolSize: 7,
+            pDraw: 1 / 7,
+            pImprove: 0.682,
+            eDeltaDps: 12.3,
+          }
+        : null,
+  }))
+  return { status: "ok", items, first: items.find((item) => item.slot === "helm")! }
+}
+function answer(job = pending(), advice: BestBuildAdvice = adviceFixture()) {
   const equipped = { ...EMPTY_EQUIPPED }
   for (const slot of GEAR_SLOTS) equipped[slot] = slot
   act(() =>
@@ -78,6 +108,7 @@ function answer(job = pending()) {
           combinations: 1,
           evaluated: 1,
           excludedCandidates: 0,
+          advice,
         },
       },
     }),
@@ -107,8 +138,26 @@ describe("Best Build explicit preview and equip flow", () => {
     expect(screen.getByText(/Current DPS: 100.00/)).toBeTruthy()
     expect(screen.getByText(/Best DPS: 120.00/)).toBeTruthy()
     expect(screen.getByText(/DPS delta: 20.00/)).toBeTruthy()
+    const selected = within(screen.getByRole("list", { name: "Selected Best Build items" }))
     for (const slot of GEAR_SLOTS)
-      expect(screen.getByText(new RegExp(`${slot} candidate`))).toBeTruthy()
+      expect(selected.getByText(new RegExp(`${slot} candidate`))).toBeTruthy()
+    const advice = within(screen.getByRole("region", { name: "Best Build — Upgrade Advice" }))
+    const first = within(advice.getByRole("region", { name: "Best Upgrade First" }))
+    expect(first.getByText(/helm candidate/)).toBeTruthy()
+    expect(first.getByText(/Slot 3: Empty stat/)).toBeTruthy()
+    expect(first.getByText(/Modeled gain at maximum roll: \+183.00 DPS/)).toBeTruthy()
+    expect(first.getByText(/Draw chance: 14.3%/)).toBeTruthy()
+    expect(first.getByText(/Chance to improve if target is drawn: 68.2%/)).toBeTruthy()
+    expect(
+      first.getByText(
+        /This target's probability-weighted expected contribution per draw \(not guaranteed\).*12.30 DPS/,
+      ),
+    ).toBeTruthy()
+    expect(advice.getAllByText("Relayed gear cannot be Retuned.")).toHaveLength(2)
+    expect(
+      advice.getAllByText("No positive legal next Retunement upgrade found for this item.").length,
+    ).toBe(12)
+    expect(advice.getByText(/Best local replacement.*helm-backup.*5.00 DPS/)).toBeTruthy()
     expect(change).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole("button", { name: "Equip Best Build" }))
     expect(change).toHaveBeenCalledTimes(1)
@@ -152,5 +201,114 @@ describe("Best Build explicit preview and equip flow", () => {
     view.unmount()
     answer(job)
     expect(retainedResponse("bestBuild")).toBeNull()
+  })
+  it("shows an explicit no-positive-upgrade state and preserves explicit equip", () => {
+    const change = vi.fn()
+    render(panel(fixture(), change))
+    fireEvent.click(screen.getByRole("button", { name: "Find Best Build" }))
+    const advice = adviceFixture()
+    advice.items = advice.items.map((item) => ({ ...item, recommendation: null }))
+    advice.first = null
+    answer(pending(), advice)
+    expect(
+      screen.getByText("No positive next Retunement upgrade found for this Best Build."),
+    ).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Equip Best Build" })).toBeTruthy()
+    expect(change).not.toHaveBeenCalled()
+  })
+  it.each(["profile", "inventory", "rotation", "class", "stats", "retunement", "equipment"])(
+    "invalidates already visible advice when %s changes",
+    (kind) => {
+      const inputs = fixture()
+      const view = render(panel(inputs, vi.fn()))
+      fireEvent.click(screen.getByRole("button", { name: "Find Best Build" }))
+      answer()
+      expect(screen.getByRole("region", { name: "Best Upgrade First" })).toBeTruthy()
+      const next =
+        kind === "inventory"
+          ? { ...inputs, inventory: [] }
+          : kind === "rotation"
+            ? { ...inputs, selectedBuiltinRotationId: "changed" }
+            : kind === "class"
+              ? { ...inputs, classId: "stonesplitStrength" }
+              : kind === "stats"
+                ? {
+                    ...inputs,
+                    inventory: inputs.inventory.map((piece, index) =>
+                      index === 0 ? { ...piece, maxPhys: 99 } : piece,
+                    ),
+                  }
+                : kind === "retunement"
+                  ? {
+                      ...inputs,
+                      inventory: inputs.inventory.map((piece, index) =>
+                        index === 0 ? { ...piece, retunedOutWords: ["crit" as const] } : piece,
+                      ),
+                    }
+                  : kind === "equipment"
+                    ? { ...inputs, equipped: { ...inputs.equipped, helm: "helm" } }
+                    : inputs
+      view.rerender(panel(next, vi.fn(), kind === "profile" ? "other" : "active"))
+      expect(screen.queryByRole("region", { name: "Best Upgrade First" })).toBeNull()
+      expect(screen.queryByRole("button", { name: "Equip Best Build" })).toBeNull()
+      view.rerender(panel(inputs, vi.fn()))
+      expect(screen.queryByRole("region", { name: "Best Upgrade First" })).toBeNull()
+    },
+  )
+  it("keeps heirloom guidance visible even alongside a higher DPS recommendation", () => {
+    render(panel(fixture(), vi.fn()))
+    fireEvent.click(screen.getByRole("button", { name: "Find Best Build" }))
+    const advice = adviceFixture()
+    advice.items.find((item) => item.slot === "pendant")!.heirloomSwap = {
+      slotIndex: 1,
+      currentWord: "crit",
+      word: "maxPhys",
+    }
+    answer(pending(), advice)
+    expect(screen.getByText("Makes it an heirloom")).toBeTruthy()
+    expect(screen.getByText("Makes it an heirloom").closest("details")?.open).toBe(true)
+    expect(screen.getByText(/An heirloom is worth more than the last few DPS\./)).toBeTruthy()
+    expect(screen.getByRole("region", { name: "Best Upgrade First" })).toBeTruthy()
+  })
+  it("leaves unavailable probabilities unknown rather than displaying zero", () => {
+    const advice = adviceFixture()
+    Object.assign(advice.first!.recommendation!, { pDraw: null, pImprove: null, eDeltaDps: null })
+    render(
+      <I18nProvider>
+        <BestBuildUpgradeAdvice inputs={fixture()} advice={advice} />
+      </I18nProvider>,
+    )
+    const first = within(screen.getByRole("region", { name: "Best Upgrade First" }))
+    expect(first.getByText(/Draw chance: Unavailable/)).toBeTruthy()
+    expect(first.getByText(/Chance to improve if target is drawn: Unavailable/)).toBeTruthy()
+    expect(first.queryByText(/0\.0%/)).toBeNull()
+    expect(first.queryByText(/expected contribution per draw/)).toBeNull()
+    expect(first.getByText(/Modeled gain at maximum roll: \+183.00 DPS/)).toBeTruthy()
+  })
+
+  it("does not render an actionable heirloom swap for a spent level-86 piece", async () => {
+    const inputs = fixture()
+    const target = classDefinition(inputs.classId)!.graduationBuilds[0].gear.find(
+      (piece) => piece.slot === "helm",
+    )!
+    const piece = structuredClone(target)
+    piece.id = "helm"
+    piece.level = 86
+    piece.relayed = false
+    piece.words[2] = { word: "crit", value: 0.03, retuned: true }
+    inputs.inventory = inputs.inventory.map((entry) =>
+      entry.slot === "helm" ? piece : { ...entry, relayed: true },
+    )
+    const result = await findBestBuild(inputs)
+    if (result.status !== "ok") throw new Error("Fixture must have a Best Build")
+    const advice = await analyzeBestBuild(inputs, result)
+    expect(advice.status).toBe("ok")
+    render(
+      <I18nProvider>
+        <BestBuildUpgradeAdvice inputs={inputs} advice={advice} />
+      </I18nProvider>,
+    )
+    expect(screen.queryByText("Makes it an heirloom")).toBeNull()
+    expect(screen.getAllByText(/already been used/).length).toBeGreaterThan(0)
   })
 })

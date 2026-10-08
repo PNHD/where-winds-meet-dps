@@ -4,7 +4,7 @@ import type { RetunementRow, RetunementWorkerResponse } from "../../engine/dpsWo
 import { postToDpsWorker, retainedResponse, subscribeToDpsWorker } from "./dpsWorkerClient"
 import { useDpsWorkerPending } from "./useDpsWorkerPending"
 
-export type RetunementReason = "ok" | "no-piece" | "no-pool" | "relayed" | "no-selection"
+export type RetunementReason = "ok" | "no-piece" | "no-pool" | "relayed" | "no-selection" | "spent"
 
 export interface RetunementAnalysisResult {
   rows: RetunementRow[]
