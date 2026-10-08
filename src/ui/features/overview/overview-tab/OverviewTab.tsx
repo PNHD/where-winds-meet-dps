@@ -4,7 +4,6 @@ import type { Inputs, Result } from "../../../../engine/types"
 import { syncClassPermanent } from "../../../utils/classSetup"
 import { resyncDefaultTalentsForBreakthrough } from "../../../../definitions/baseStats"
 import { slotInnerWayId } from "../../../../definitions/innerWays/registry"
-import { useItemRanking } from "../../../hooks/useItemRanking"
 import { useSetTileDps } from "../../../hooks/useSetTileDps"
 import { ClassSelect } from "../class-select/ClassSelect"
 import { BreakthroughSelect } from "../breakthrough-select/BreakthroughSelect"
@@ -12,22 +11,22 @@ import { MindMethodsPanel } from "../mind-methods-panel/MindMethodsPanel"
 import { EncounterSettingsPanel } from "../encounter-settings-panel/EncounterSettingsPanel"
 import { SetBonusesPanel } from "../set-bonuses-panel/SetBonusesPanel"
 import { StatsOverviewPanel } from "../../../components/stats-overview-panel/StatsOverviewPanel"
-import { ItemRankingTable } from "../item-ranking-table/ItemRankingTable"
+import { StatLabPanel } from "../stat-lab-panel/StatLabPanel"
 import styles from "./OverviewTab.module.scss"
 
 export function OverviewTab({
   inputs,
   engineInputs,
   onChange,
-  result,
+  profileId,
 }: {
   inputs: Inputs
   engineInputs: Inputs
   onChange: (next: Inputs) => void
   result: Result
+  profileId?: string
 }) {
   const { t } = useI18n()
-  const { rows: rankingRows, isPending: rankingPending } = useItemRanking(engineInputs, result.dps)
   const { data: tileDps, isPending: tilesPending } = useSetTileDps(inputs)
   const slottedInnerWays = inputs.mindMethods.filter((slot) => slotInnerWayId(slot)).length
   return (
@@ -90,15 +89,7 @@ export function OverviewTab({
       </div>
 
       <div className={styles.lift}>
-        <div className="panel">
-          <div className="panel-head">
-            <h2>{t("overview.gearStatLift")}</h2>
-            <span className="panel-head-meta">{rankingRows.length}</span>
-          </div>
-          <div style={{ opacity: rankingPending ? 0.6 : 1 }}>
-            <ItemRankingTable rows={rankingRows} />
-          </div>
-        </div>
+        <StatLabPanel inputs={engineInputs} profileId={profileId} />
       </div>
     </div>
   )
