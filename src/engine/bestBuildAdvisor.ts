@@ -45,20 +45,25 @@ export async function analyzeBestBuild(
       if (cancelled()) return { status: "cancelled" }
       const pieceId = result.equipped[slot]!
       const piece = inputs.inventory.find((item) => item.id === pieceId)!
-      const analysis = computeRetunement({ reqId: 0, inputs: proposed, pieceId }, (candidate) => {
-        const dps = bestBuildDps({
-          ...proposed,
-          inventory: proposed.inventory.map((entry) => (entry.id === pieceId ? candidate : entry)),
-        })
-        if (!Number.isFinite(dps)) throw new Error("Non-finite Retunement DPS")
-        return dps
-      })
       const heirloom = heirloomMatch(piece, inputs)
-      const reason = piece.relayed
+      const excludedReason = piece.relayed
         ? "relayed"
         : heirloom.builds.length > 0
           ? "heirloom"
-          : analysis.reason
+          : null
+      const analysis = excludedReason
+        ? null
+        : computeRetunement({ reqId: 0, inputs: proposed, pieceId }, (candidate) => {
+            const dps = bestBuildDps({
+              ...proposed,
+              inventory: proposed.inventory.map((entry) =>
+                entry.id === pieceId ? candidate : entry,
+              ),
+            })
+            if (!Number.isFinite(dps)) throw new Error("Non-finite Retunement DPS")
+            return dps
+          })
+      const reason = excludedReason ?? analysis!.reason
       let runnerUp: BestBuildItemAdvice["runnerUp"] = null
       for (const alternative of inputs.inventory
         .filter((item) => item.slot === slot && item.id !== pieceId && validBestBuildPiece(item))
@@ -77,7 +82,7 @@ export async function analyzeBestBuild(
         slot,
         pieceId,
         reason,
-        recommendation: reason === "ok" ? bestPositiveRetunement(analysis.rows) : null,
+        recommendation: reason === "ok" && analysis ? bestPositiveRetunement(analysis.rows) : null,
         heirloomSwap: piece.relayed ? null : heirloom.swap,
         runnerUp,
       })

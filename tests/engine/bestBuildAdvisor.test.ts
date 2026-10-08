@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 // Scoped to the active fixture class: directional and parity checks, not damage validation.
 import { analyzeBestBuild, bestPositiveRetunement } from "../../src/engine/bestBuildAdvisor"
 import { bestBuildDps, findBestBuild } from "../../src/engine/bestBuild"
+import * as bestBuild from "../../src/engine/bestBuild"
+import * as retunementAnalysis from "../../src/engine/retunementAnalysis"
+import { retuneAttemptSpent } from "../../src/engine/retunement"
 import { defaultInputs } from "../../src/engine/defaults"
 import { activeRotationForInputs } from "../../src/engine/dps"
 import { computeRetunement, type RetunementRow } from "../../src/engine/retunementAnalysis"
@@ -205,6 +208,53 @@ describe("Best Build next legal Retunement advice", () => {
       reason: "spent",
       rows: [],
     })
+  })
+  it.each([86, 96] as const)("keeps near-heirloom advice legal at level %i", async (level) => {
+    const inputs = fixture()
+    const target = classDefinition(inputs.classId)!.graduationBuilds[0].gear.find(
+      (piece) => piece.slot === "helm",
+    )!
+    const piece = structuredClone(target)
+    piece.id = "helm"
+    piece.level = level
+    piece.relayed = false
+    piece.words[2] = { word: "crit", value: 0.03, retuned: true }
+    inputs.inventory = inputs.inventory.map((entry) =>
+      entry.slot === "helm" ? piece : { ...entry, relayed: true },
+    )
+    const item = (await adviceFor(inputs)).items.find((entry) => entry.slot === "helm")!
+    expect(retuneAttemptSpent(piece)).toBe(level === 86)
+    if (level === 86)
+      expect(item).toMatchObject({ reason: "spent", recommendation: null, heirloomSwap: null })
+    else expect(item.heirloomSwap).toEqual({ slotIndex: 2, currentWord: "crit", word: "power" })
+  })
+  it("skips Retunement scoring for protected and relayed pieces while retaining replacement sensitivity", async () => {
+    const inputs = fixture()
+    const targets = classDefinition(inputs.classId)!.graduationBuilds[0].gear
+    inputs.inventory = GEAR_SLOTS.map((slot) => ({
+      ...structuredClone(targets.find((piece) => piece.slot === slot)!),
+      id: slot,
+      relayed: slot !== "helm",
+    }))
+    inputs.inventory.push({
+      ...structuredClone(inputs.inventory.find((piece) => piece.slot === "helm")!),
+      id: "helm-backup",
+    })
+    const result = await resultFor(inputs)
+    const retune = vi.spyOn(retunementAnalysis, "computeRetunement")
+    const score = vi.spyOn(bestBuild, "bestBuildDps")
+    try {
+      const advice = await analyzeBestBuild(inputs, result)
+      expect(advice.status).toBe("ok")
+      if (advice.status !== "ok") return
+      expect(retune).not.toHaveBeenCalled()
+      expect(score).toHaveBeenCalledTimes(1)
+      const runner = advice.items.find((item) => item.slot === "helm")!.runnerUp!
+      expect(runner).toEqual({ pieceId: "helm-backup", dps: result.bestDps, gap: 0 })
+    } finally {
+      retune.mockRestore()
+      score.mockRestore()
+    }
   })
   it("uses shared history restrictions at unweighted levels and leaves unknown probabilities undefined", async () => {
     const inputs = fixture()

@@ -1,7 +1,7 @@
 import type { GraduationBuild } from "../definitions/graduationBuilds/graduationBuildDef"
 import type { GearPiece, GearWordId, Inputs } from "./types"
 import { followedGraduationBuildAmong, graduationBuildsForProfile } from "./graduation"
-import { ALL_REROLLABLE_SLOTS, retunedOutWordsOf } from "./retunement"
+import { ALL_REROLLABLE_SLOTS, retuneAttemptSpent, retunedOutWordsOf } from "./retunement"
 
 export interface HeirloomSwap {
   slotIndex: number
@@ -51,7 +51,7 @@ function singleSwapTo(piece: GearPiece, target: GearPiece): HeirloomSwap | null 
 }
 
 function canStillRetune(piece: GearPiece, slotIndex: number, word: GearWordId): boolean {
-  if (piece.relayed) return false
+  if (piece.relayed || retuneAttemptSpent(piece)) return false
   const markedElsewhere = piece.words.some(
     (line, index) => line.retuned && index !== slotIndex && ALL_REROLLABLE_SLOTS.includes(index),
   )

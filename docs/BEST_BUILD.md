@@ -24,8 +24,9 @@
   roll outcomes and attempt limits; never maintain a second legality model.
 - Recommend only positive legal next Retunements. Rank by maximum-roll modeled
   gain; identify that roll assumption, keep draw and conditional improve chances
-  distinct, and label any probability-weighted target contribution as expected,
-  never guaranteed. Leave unavailable probabilities unknown.
+  distinct, and label any probability-weighted expectation as this target's
+  contribution per draw, never the whole draw's gain or a guaranteed gain.
+  Leave unavailable probabilities unknown.
 - Preserve heirloom guidance. Protect existing heirlooms and exclude relayed or
   exhausted single-attempt pieces from actionable upgrade recommendations.
 - Keep advice within the search request's worker, cancellation and source-key

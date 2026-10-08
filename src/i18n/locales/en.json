@@ -1384,7 +1384,7 @@
   "gear.bestBuild.advice.draw": "Draw chance",
   "gear.bestBuild.advice.empty": "Empty stat",
   "gear.bestBuild.advice.error": "Upgrade Advice could not be evaluated. No gear was changed.",
-  "gear.bestBuild.advice.expected": "Probability-weighted expected gain per draw (not guaranteed)",
+  "gear.bestBuild.advice.expected": "This target's probability-weighted expected contribution per draw (not guaranteed)",
   "gear.bestBuild.advice.first": "Best Upgrade First",
   "gear.bestBuild.advice.gain": "Modeled gain at maximum roll",
   "gear.bestBuild.advice.gap": "Selected minus replacement",

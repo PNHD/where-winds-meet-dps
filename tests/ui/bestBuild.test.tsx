@@ -8,6 +8,10 @@ import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { BestBuildPanel } from "../../src/ui/features/gear/gear-tab/BestBuildPanel"
 import { retainedResponse } from "../../src/ui/hooks/dpsWorkerClient"
 import type { BestBuildAdvice, BestBuildItemAdvice } from "../../src/engine/bestBuildAdvisor"
+import { analyzeBestBuild } from "../../src/engine/bestBuildAdvisor"
+import { findBestBuild } from "../../src/engine/bestBuild"
+import { classDefinition } from "../../src/definitions/classes/registry"
+import { BestBuildUpgradeAdvice } from "../../src/ui/features/gear/gear-tab/best-build-upgrade-advice/BestBuildUpgradeAdvice"
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
@@ -144,7 +148,11 @@ describe("Best Build explicit preview and equip flow", () => {
     expect(first.getByText(/Modeled gain at maximum roll: \+183.00 DPS/)).toBeTruthy()
     expect(first.getByText(/Draw chance: 14.3%/)).toBeTruthy()
     expect(first.getByText(/Chance to improve if target is drawn: 68.2%/)).toBeTruthy()
-    expect(first.getByText(/Probability-weighted expected gain per draw.*12.30 DPS/)).toBeTruthy()
+    expect(
+      first.getByText(
+        /This target's probability-weighted expected contribution per draw \(not guaranteed\).*12.30 DPS/,
+      ),
+    ).toBeTruthy()
     expect(advice.getAllByText("Relayed gear cannot be Retuned.")).toHaveLength(2)
     expect(
       advice.getAllByText("No positive legal next Retunement upgrade found for this item.").length,
@@ -261,5 +269,46 @@ describe("Best Build explicit preview and equip flow", () => {
     expect(screen.getByText("Makes it an heirloom").closest("details")?.open).toBe(true)
     expect(screen.getByText(/An heirloom is worth more than the last few DPS\./)).toBeTruthy()
     expect(screen.getByRole("region", { name: "Best Upgrade First" })).toBeTruthy()
+  })
+  it("leaves unavailable probabilities unknown rather than displaying zero", () => {
+    const advice = adviceFixture()
+    Object.assign(advice.first!.recommendation!, { pDraw: null, pImprove: null, eDeltaDps: null })
+    render(
+      <I18nProvider>
+        <BestBuildUpgradeAdvice inputs={fixture()} advice={advice} />
+      </I18nProvider>,
+    )
+    const first = within(screen.getByRole("region", { name: "Best Upgrade First" }))
+    expect(first.getByText(/Draw chance: Unavailable/)).toBeTruthy()
+    expect(first.getByText(/Chance to improve if target is drawn: Unavailable/)).toBeTruthy()
+    expect(first.queryByText(/0\.0%/)).toBeNull()
+    expect(first.queryByText(/expected contribution per draw/)).toBeNull()
+    expect(first.getByText(/Modeled gain at maximum roll: \+183.00 DPS/)).toBeTruthy()
+  })
+
+  it("does not render an actionable heirloom swap for a spent level-86 piece", async () => {
+    const inputs = fixture()
+    const target = classDefinition(inputs.classId)!.graduationBuilds[0].gear.find(
+      (piece) => piece.slot === "helm",
+    )!
+    const piece = structuredClone(target)
+    piece.id = "helm"
+    piece.level = 86
+    piece.relayed = false
+    piece.words[2] = { word: "crit", value: 0.03, retuned: true }
+    inputs.inventory = inputs.inventory.map((entry) =>
+      entry.slot === "helm" ? piece : { ...entry, relayed: true },
+    )
+    const result = await findBestBuild(inputs)
+    if (result.status !== "ok") throw new Error("Fixture must have a Best Build")
+    const advice = await analyzeBestBuild(inputs, result)
+    expect(advice.status).toBe("ok")
+    render(
+      <I18nProvider>
+        <BestBuildUpgradeAdvice inputs={inputs} advice={advice} />
+      </I18nProvider>,
+    )
+    expect(screen.queryByText("Makes it an heirloom")).toBeNull()
+    expect(screen.getAllByText(/already been used/).length).toBeGreaterThan(0)
   })
 })
