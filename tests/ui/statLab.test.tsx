@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { WorkerRequest, WorkerResponse } from "../../src/engine/dpsWorker"
 import { defaultInputs } from "../../src/engine/defaults"
@@ -6,6 +6,11 @@ import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { StatLabPanel } from "../../src/ui/features/overview/stat-lab-panel/StatLabPanel"
 import { ItemRankingTable } from "../../src/ui/features/overview/item-ranking-table/ItemRankingTable"
 import type { Inputs } from "../../src/engine/types"
+import { activeRotationForInputs, runEngine } from "../../src/engine/dps"
+import { builtinSkillsForClass } from "../../src/engine/builtinLibrary"
+import { computeStatLab } from "../../src/engine/statLab"
+import { withDerivedStats } from "../../src/engine/derivedInputs"
+import { applyArmorSet, applyBowSet } from "../../src/engine/panel"
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
@@ -71,6 +76,92 @@ beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
 
 describe("Stat Lab worker ownership and preview", () => {
+  it("renders one real Spear increment and selects it by keyboard without saved-state writes", async () => {
+    vi.useRealTimers()
+    localStorage.setItem("wwm.locale", "en")
+    const config = { ...defaultInputs, classId: "bellstrikeUmbra", breakthrough: 20 }
+    const rotation = activeRotationForInputs(config)!
+    const skills = builtinSkillsForClass(config.classId)
+    const inputs = applyBowSet(
+      applyArmorSet(
+        withDerivedStats({
+          ...config,
+          activeCustomRotation: {
+            ...rotation,
+            steps: rotation.steps.filter(
+              (step) =>
+                skills.find((skill) => skill.id === step.skillId)?.weaponOrAttribute === "Spear",
+            ),
+          },
+        }),
+      ),
+    )
+    const original = JSON.stringify(inputs)
+    const storage = JSON.stringify(localStorage)
+    const writes = vi.spyOn(Storage.prototype, "setItem")
+    try {
+      render(panel(inputs))
+      async function evaluatePending() {
+        const job = pending()
+        const result = await computeStatLab(job.request.inputs, job.request.changes)
+        act(() =>
+          job.worker.onmessage?.({
+            data: {
+              kind: "statLab",
+              reqId: job.request.reqId,
+              sourceKey: job.request.sourceKey,
+              result,
+            },
+          }),
+        )
+        return result
+      }
+      await waitFor(() => expect(pending()?.request.inputs).toBeTruthy())
+      await evaluatePending()
+      expect(writes.mock.calls.every(([key]) => key === "wwm.locale")).toBe(true)
+      writes.mockClear()
+      const priority = screen.getByRole("region", { name: "Stat Priority" })
+      const spearRows = within(priority)
+        .getAllByRole("row")
+        .filter((row) => row.textContent?.includes("Art of Spear DMG Boost"))
+      expect(spearRows).toHaveLength(1)
+      fireEvent.click(screen.getByRole("button", { name: "Add stat change" }))
+      const selector = screen.getByRole("combobox", { name: "Stat to change 1" })
+      selector.focus()
+      fireEvent.keyDown(selector, { key: "Enter" })
+      const options = screen.getAllByRole("option")
+      expect(
+        options.filter((option) => option.getAttribute("data-value") === "tunement:spearBoost"),
+      ).toHaveLength(1)
+      const index = options.findIndex(
+        (option) => option.getAttribute("data-value") === "tunement:spearBoost",
+      )
+      fireEvent.keyDown(selector, { key: "Home" })
+      for (let step = 0; step < index; step++) fireEvent.keyDown(selector, { key: "ArrowDown" })
+      fireEvent.keyDown(selector, { key: "Enter" })
+      expect(selector.textContent).toContain("Art of Spear DMG Boost")
+      expect(document.activeElement).toBe(selector)
+      expect(screen.queryByRole("listbox")).toBeNull()
+      const previous = pending().request.reqId
+      fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "8.6" } })
+      await waitFor(() => expect(pending().request.reqId).not.toBe(previous))
+      const result = await evaluatePending()
+      if (result.status !== "ok") throw new Error("missing result")
+      expect(pending().request.changes).toEqual([
+        { source: "tunement", statLineId: "spearBoost", amount: 0.086 },
+      ])
+      expect(result.hypotheticalDps).toBe(
+        runEngine({ ...inputs, spearBoost: inputs.spearBoost + 0.086 }).dps,
+      )
+      expect(JSON.stringify(inputs)).toBe(original)
+      expect(JSON.stringify(localStorage)).toBe(storage)
+      expect(writes).not.toHaveBeenCalled()
+      expect(screen.queryByRole("button", { name: /Equip|Apply|Save/ })).toBeNull()
+    } finally {
+      writes.mockRestore()
+    }
+  })
+
   it("preserves Lead and aligns the modeled-effect column", () => {
     localStorage.setItem("wwm.locale", "en")
     render(

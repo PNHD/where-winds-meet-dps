@@ -1,13 +1,13 @@
 // Scoped to validated Bellstrike Umbra and Bellstrike Splendor; parity asserts model consistency.
 import { describe, expect, it } from "vitest"
 import { defaultInputs } from "../../src/engine/defaults"
-import { runEngine } from "../../src/engine/dps"
+import { activeRotationForInputs, runEngine } from "../../src/engine/dps"
 import { withDerivedStats } from "../../src/engine/derivedInputs"
 import { applyArmorSet, applyBowSet } from "../../src/engine/panel"
-import { builtinRotationsForClass } from "../../src/engine/builtinLibrary"
+import { builtinRotationsForClass, builtinSkillsForClass } from "../../src/engine/builtinLibrary"
 import { gearLevelForBreakthrough } from "../../src/definitions/baseStats/breakthroughs"
 import { gearWordMaxRoll } from "../../src/data/stats/statLines"
-import { computeRanking } from "../../src/engine/itemRanking"
+import { computeRanking, getWordSpecs } from "../../src/engine/itemRanking"
 import {
   compareStatPriority,
   computeStatLab,
@@ -26,6 +26,85 @@ function fixture(config = configInputs) {
 const inputs = fixture()
 
 describe("Unified Stat Lab", () => {
+  it.each(
+    ["bellstrikeUmbra", "bellstrikeSplendor"].flatMap((classId) =>
+      ["Spear", "Sword", "both", "empty"].map((weapon) => ({ classId, weapon })),
+    ),
+  )(
+    "keeps unique catalogue identities for $classId / $weapon rotations",
+    async ({ classId, weapon }) => {
+      const config = { ...configInputs, classId }
+      const rotation = activeRotationForInputs(config)!
+      const skills = builtinSkillsForClass(classId)
+      const custom = {
+        ...rotation,
+        steps: rotation.steps.filter(
+          (step) =>
+            weapon === "both" ||
+            skills.find((skill) => skill.id === step.skillId)?.weaponOrAttribute === weapon,
+        ),
+      }
+      if (weapon !== "empty") expect(custom.steps.length).toBeGreaterThan(0)
+      const build = fixture({ ...config, activeCustomRotation: custom })
+      const words = getWordSpecs(build, gearLevelForBreakthrough(build.breakthrough))
+      expect(new Set(words.map((spec) => spec.word)).size).toBe(words.length)
+      const options = statLabOptions(build)
+      const optionKeys = options.map((spec) => `${spec.source}:${spec.word}`)
+      expect(new Set(optionKeys).size).toBe(optionKeys.length)
+      expect(
+        options.filter((spec) => spec.word === "spearBoost" && spec.source === "tunement"),
+      ).toHaveLength(1)
+      if (weapon !== "Spear") {
+        expect(
+          options.filter((spec) => spec.word === "swordBoost" && spec.source === "tunement"),
+        ).toHaveLength(1)
+      }
+      const ranking = computeRanking(build, runEngine(build).dps)
+      const rankingKeys = ranking.map((row) => `${row.source}:${row.statLineId}`)
+      expect(new Set(rankingKeys).size).toBe(rankingKeys.length)
+      const before = JSON.stringify(build)
+      const storage = JSON.stringify(localStorage)
+      const boost = options.find(
+        (spec) => spec.source === "tunement" && spec.word === "spearBoost",
+      )!
+      const result = await computeStatLab(build, [
+        { source: "tunement", statLineId: "spearBoost", amount: boost.amount },
+      ])
+      if (result.status !== "ok") throw new Error("missing result")
+      const keys = result.rows.map((row) => `${row.source}:${row.statLineId}`)
+      expect(new Set(keys).size).toBe(keys.length)
+      expect(keys.filter((key) => key === "tunement:spearBoost")).toHaveLength(1)
+      const expected = runEngine({ ...build, spearBoost: build.spearBoost + boost.amount }).dps
+      expect(result.baselineDps).toBe(runEngine(build).dps)
+      expect(result.hypotheticalDps).toBe(expected)
+      expect(result.deltaDps).toBe(expected - result.baselineDps)
+      expect(
+        result.rows.find((row) => row.source === "tunement" && row.statLineId === "spearBoost")
+          ?.expectedDps,
+      ).toBe(expected)
+      if (weapon === "empty") {
+        expect(result.baselineDps).toBe(0)
+        expect(result.hypotheticalDps).toBe(0)
+        expect(result.deltaPercent).toBeNull()
+        expect(result.rows.every((row) => row.dpsDelta === 0)).toBe(true)
+      }
+      const signed = await computeStatLab(build, [
+        { source: "tunement", statLineId: "spearBoost", amount: boost.amount },
+        { source: "tunement", statLineId: "crit", amount: -0.01 },
+      ])
+      if (signed.status !== "ok") throw new Error("missing signed result")
+      expect(signed.hypotheticalDps).toBe(
+        runEngine({
+          ...build,
+          spearBoost: build.spearBoost + boost.amount,
+          critRate: build.critRate - 0.01,
+        }).dps,
+      )
+      expect(JSON.stringify(build)).toBe(before)
+      expect(JSON.stringify(localStorage)).toBe(storage)
+    },
+  )
+
   it("matches actual complete-engine baseline, increments and existing stat ranking", async () => {
     const result = await computeStatLab(inputs, [])
     expect(result.status).toBe("ok")

@@ -116,7 +116,7 @@ function buildWordSpecs(inputs: Inputs, level: GearLevel): WordSpec<GearWordId>[
       x.allMartialBoost += roll
     }),
   ]
-  for (const weapon of [primaryWeapon, secondaryWeapon]) {
+  for (const weapon of new Set([primaryWeapon, secondaryWeapon])) {
     if (!weapon) continue
     const weaponWordId = gearWordIdForPath(WEAPON_BOOST_STAT_KEY[weapon])
     if (!weaponWordId) continue
