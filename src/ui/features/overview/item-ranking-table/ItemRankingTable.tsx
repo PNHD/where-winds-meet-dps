@@ -1,9 +1,11 @@
+import { compareStatPriority } from "../../../../engine/statLab"
 import type { ItemRankingRow } from "../../../../engine/types"
 import { useI18n } from "../../../../i18n/i18nContext"
 import styles from "./ItemRankingTable.module.scss"
 
 interface Props {
   rows: ItemRankingRow[]
+  baselineDps?: number
 }
 
 function fmtDpsDelta(dpsDelta: number): string {
@@ -22,10 +24,10 @@ function deltaSignClass(dpsDelta: number): string {
   return "is-zero"
 }
 
-export function ItemRankingTable({ rows }: Props) {
+export function ItemRankingTable({ rows, baselineDps }: Props) {
   const { t } = useI18n()
   if (!rows.length) return null
-  const sorted = [...rows].sort((rowA, rowB) => rowB.liftPercent - rowA.liftPercent)
+  const sorted = [...rows].sort(compareStatPriority)
   const fmt = (value: number, digits = 2) =>
     Number.isFinite(value)
       ? value.toLocaleString("en-US", {
@@ -42,6 +44,7 @@ export function ItemRankingTable({ rows }: Props) {
           <th>{t("overview.itemRankingTable.dps")}</th>
           <th>{t("overview.itemRankingTable.lift")}</th>
           <th>{t("overview.itemRankingTable.lead")}</th>
+          <th>{t("statLab.effect")}</th>
         </tr>
       </thead>
       <tbody>
@@ -55,10 +58,15 @@ export function ItemRankingTable({ rows }: Props) {
             >
               {fmtDpsDelta(row.dpsDelta)}
             </td>
-            <td>{(row.liftPercent * 100).toFixed(2) + " %"}</td>
+            <td>
+              {baselineDps !== undefined && baselineDps <= 0
+                ? t("statLab.unavailablePercent")
+                : (row.liftPercent * 100).toFixed(2) + " %"}
+            </td>
             <td style={{ color: row.leadVsMin === "(none)" ? "#666" : "#d8b070" }}>
               {typeof row.leadVsMin === "number" ? row.leadVsMin.toFixed(2) : t("common.none")}
             </td>
+            <td>{row.dpsDelta === 0 ? t("statLab.noEffect") : t("statLab.modeled")}</td>
           </tr>
         ))}
       </tbody>

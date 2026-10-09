@@ -1,3 +1,4 @@
+import { computeStatLab, type StatChange, type StatLabResult } from "./statLab"
 import { findBestBuild, type BestBuildResult } from "./bestBuild"
 import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone, relayedCapValue } from "./gearStats"
@@ -713,6 +714,8 @@ function computeGraduation(req: GraduationWorkerRequest): GraduationWorkerRespon
 }
 
 export type WorkerRequest =
+  | { kind: "statLab"; reqId: number; inputs: Inputs; sourceKey: string; changes: StatChange[] }
+  | { kind: "statLabCancel"; reqId: number }
   | { kind: "bestBuild"; reqId: number; inputs: Inputs; sourceKey: string }
   | { kind: "bestBuildCancel"; reqId: number }
   | ({ kind: "dpsDeltas" } & DpsWorkerRequest)
@@ -731,6 +734,7 @@ export type WorkerRequest =
   | ({ kind: "graduation" } & GraduationWorkerRequest)
 
 export type WorkerResponse =
+  | { kind: "statLab"; reqId: number; sourceKey: string; result: StatLabResult }
   | { kind: "bestBuild"; reqId: number; sourceKey: string; result: BestBuildResult }
   | ({ kind: "dpsDeltas" } & DpsWorkerResponse)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerResponse)
@@ -749,10 +753,27 @@ export type WorkerResponse =
 
 const cancelledReqIds = new Set<number>()
 const activeBestBuildIds = new Set<number>()
+const activeStatLabIds = new Set<number>()
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const req = e.data
-  if (req.kind === "bestBuildCancel") {
+  if (req.kind === "statLabCancel") {
+    if (activeStatLabIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
+  } else if (req.kind === "statLab") {
+    activeStatLabIds.add(req.reqId)
+    void computeStatLab(req.inputs, req.changes, () => cancelledReqIds.has(req.reqId)).then(
+      (result) => {
+        activeStatLabIds.delete(req.reqId)
+        cancelledReqIds.delete(req.reqId)
+        ;(self as unknown as Worker).postMessage({
+          kind: "statLab",
+          reqId: req.reqId,
+          sourceKey: req.sourceKey,
+          result,
+        })
+      },
+    )
+  } else if (req.kind === "bestBuildCancel") {
     if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
   } else if (req.kind === "bestBuild") {
     activeBestBuildIds.add(req.reqId)

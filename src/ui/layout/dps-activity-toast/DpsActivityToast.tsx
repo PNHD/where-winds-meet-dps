@@ -4,6 +4,7 @@ import { useDpsWorkerActivity } from "../../hooks/useDpsWorkerActivity"
 import styles from "./DpsActivityToast.module.scss"
 
 const SWEEP_KEYS: Partial<Record<WorkerRequest["kind"], string>> = {
+  statLab: "layout.dpsActivityToast.sweep.statLab",
   bestBuild: "common.bestBuild",
   equippedDeltas: "layout.dpsActivityToast.sweep.equippedDeltas",
   dpsDeltas: "common.inventory",

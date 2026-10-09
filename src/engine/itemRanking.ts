@@ -8,7 +8,7 @@
 } from "./types"
 import { ATTRIBUTE_KEYS, isWeaponName } from "./types"
 import type { Skill } from "./skill"
-import { runEngine } from "./dps"
+import { activeRotationForInputs, runEngine } from "./dps"
 import { getSchool } from "./panel"
 import {
   GEAR_WORD_UNIT,
@@ -25,7 +25,7 @@ import {
 import { WEAPON_BOOST_STAT_KEY } from "./statRegistry"
 import { attunementLabelKey, attunementMax, attunementsForClass } from "./attunements"
 import { addStatDelta, resolveEnginePath } from "./statPaths"
-import { builtinSkillsForClass, defaultRotationForClass } from "./builtinLibrary"
+import { builtinSkillsForClass } from "./builtinLibrary"
 import { gearLevelForBreakthrough } from "../definitions/baseStats/breakthroughs"
 import { resolveRotation } from "./rotation"
 
@@ -43,9 +43,7 @@ export function getWordSpecs(inputs: Inputs, level: GearLevel): WordSpec<GearWor
 }
 
 function rotationWeapons(inputs: Inputs): WeaponName[] {
-  const active = inputs.activeCustomRotation
-  const rotation =
-    active && active.classId === inputs.classId ? active : defaultRotationForClass(inputs.classId)
+  const rotation = activeRotationForInputs(inputs)
   if (!rotation) return []
 
   const byId = new Map<string, Skill>()
@@ -118,7 +116,7 @@ function buildWordSpecs(inputs: Inputs, level: GearLevel): WordSpec<GearWordId>[
       x.allMartialBoost += roll
     }),
   ]
-  for (const weapon of [primaryWeapon, secondaryWeapon]) {
+  for (const weapon of new Set([primaryWeapon, secondaryWeapon])) {
     if (!weapon) continue
     const weaponWordId = gearWordIdForPath(WEAPON_BOOST_STAT_KEY[weapon])
     if (!weaponWordId) continue
@@ -217,31 +215,47 @@ function applyAttrAttack(i: Inputs, attr: AttributeKey, field: "min" | "max", am
   block[field] += amt
 }
 
-export function computeRanking(inputs: Inputs, baseDps: number): ItemRankingRow[] {
+export function rankingCatalogues(inputs: Inputs) {
   const level = gearLevelForBreakthrough(inputs.breakthrough)
   const catalogues: { source: ItemRankingRow["source"]; specs: WordSpec[] }[] = [
     { source: "tunement", specs: buildWordSpecs(inputs, level) },
     { source: "attunement", specs: buildAttunementSpecs(inputs, level) },
   ]
+  return catalogues
+}
+
+export function evaluateStatIncrement(
+  inputs: Inputs,
+  baseDps: number,
+  spec: WordSpec,
+  source: ItemRankingRow["source"],
+): ItemRankingRow {
+  const expectedDps = runEngine(spec.apply(inputs), { collect: "totals" }).dps
+  return {
+    statLineId: spec.word,
+    label: spec.label,
+    labelKey: spec.labelKey,
+    source,
+    amount: spec.amount,
+    unit: spec.unit,
+    expectedDps,
+    dpsDelta: expectedDps - baseDps,
+    liftPercent: baseDps > 0 ? expectedDps / baseDps - 1 : 0,
+    leadVsMin: 0,
+  }
+}
+
+export function computeRanking(inputs: Inputs, baseDps: number): ItemRankingRow[] {
   const rows: ItemRankingRow[] = []
-  for (const { source, specs } of catalogues) {
+  for (const { source, specs } of rankingCatalogues(inputs)) {
     for (const spec of specs) {
-      const withSpec = runEngine(spec.apply(inputs))
-      const lift = baseDps > 0 ? withSpec.dps / baseDps - 1 : 0
-      rows.push({
-        statLineId: spec.word,
-        label: spec.label,
-        labelKey: spec.labelKey,
-        source,
-        amount: spec.amount,
-        unit: spec.unit,
-        expectedDps: withSpec.dps,
-        dpsDelta: withSpec.dps - baseDps,
-        liftPercent: lift,
-        leadVsMin: 0,
-      })
+      rows.push(evaluateStatIncrement(inputs, baseDps, spec, source))
     }
   }
+  return withRankingLeads(rows)
+}
+
+export function withRankingLeads(rows: ItemRankingRow[]): ItemRankingRow[] {
   const positive = rows.filter((r) => r.liftPercent > 0.001).map((r) => r.liftPercent)
   const minPositive = positive.length ? Math.min(...positive) : 0
   for (const r of rows) {
