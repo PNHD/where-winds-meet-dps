@@ -22,6 +22,7 @@ const PROGRESS_OWNER_KIND: Partial<Record<ResponseKind, RequestKind>> = {
   parseSimulationProgress: "parseSimulation",
 }
 const CANCEL_KIND_BY_KIND: Partial<Record<RequestKind, RequestKind>> = {
+  graduationPlanner: "graduationPlannerCancel",
   bestBuild: "bestBuildCancel",
   parseSimulation: "parseSimulationCancel",
 }
@@ -250,7 +251,7 @@ function abandonRequests(kind: RequestKind, state: KindState): void {
   dropQueued(state)
   state.awaitedReqId = null
   state.lastDeliveredReqId = state.latestReqId
-  if (kind === "bestBuild") {
+  if (kind === "bestBuild" || kind === "graduationPlanner") {
     state.retained = null
     state.retainedReqId = state.latestReqId
   }
@@ -297,7 +298,7 @@ export function postToDpsWorker(unsent: UnsentRequest): void {
 
 export function cancelDpsWorkerRequest(kind: RequestKind): void {
   const state = stateFor(kind)
-  if (kind === "bestBuild") {
+  if (kind === "bestBuild" || kind === "graduationPlanner") {
     abandonRequests(kind, state)
     return
   }

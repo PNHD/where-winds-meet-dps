@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { defaultInputs } from "../../src/engine/defaults"
 import type { Inputs } from "../../src/engine/types"
+import { GearTab } from "../../src/ui/features/gear/gear-tab/GearTab"
+import { ConfirmProvider } from "../../src/ui/components/confirm-dialog/ConfirmDialog"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { NewGearPieceDialog } from "../../src/ui/features/gear/new-gear-piece-dialog/NewGearPieceDialog"
 
@@ -53,9 +55,7 @@ function addScreenshot(): void {
 }
 
 describe("NewGearPieceDialog screenshot import", () => {
-  it("has no separate screenshot dialog entry point left in the gear tab", async () => {
-    const { GearTab } = await import("../../src/ui/features/gear/gear-tab/GearTab")
-    const { ConfirmProvider } = await import("../../src/ui/components/confirm-dialog/ConfirmDialog")
+  it("has no separate screenshot dialog entry point left in the gear tab", () => {
     render(
       <I18nProvider>
         <ConfirmProvider>
