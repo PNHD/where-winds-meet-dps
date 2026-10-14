@@ -217,7 +217,11 @@ function applyAttrAttack(i: Inputs, attr: AttributeKey, field: "min" | "max", am
   block[field] += amt
 }
 
-export function computeRanking(inputs: Inputs, baseDps: number): ItemRankingRow[] {
+export function computeRanking(
+  inputs: Inputs,
+  baseDps: number,
+  statLineIds?: readonly string[],
+): ItemRankingRow[] {
   const level = gearLevelForBreakthrough(inputs.breakthrough)
   const catalogues: { source: ItemRankingRow["source"]; specs: WordSpec[] }[] = [
     { source: "tunement", specs: buildWordSpecs(inputs, level) },
@@ -226,6 +230,7 @@ export function computeRanking(inputs: Inputs, baseDps: number): ItemRankingRow[
   const rows: ItemRankingRow[] = []
   for (const { source, specs } of catalogues) {
     for (const spec of specs) {
+      if (statLineIds && !statLineIds.includes(spec.word)) continue
       const withSpec = runEngine(spec.apply(inputs))
       const lift = baseDps > 0 ? withSpec.dps / baseDps - 1 : 0
       rows.push({

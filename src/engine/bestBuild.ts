@@ -1,36 +1,31 @@
 import {
   validBestBuildPiece,
+  BEST_BUILD_LIMITS,
   type BestBuildError,
   type BestBuildResult,
 } from "./bestBuildSelection"
-export { applyBestBuild, type BestBuildResult } from "./bestBuildSelection"
+export { applyBestBuild, BEST_BUILD_LIMITS, type BestBuildResult } from "./bestBuildSelection"
 import { activeRotationForInputs, runEngine } from "./dps"
 import { withDerivedStats } from "./derivedInputs"
 import { applyArmorSet, applyBowSet } from "./panel"
 import { EMPTY_EQUIPPED, GEAR_SLOTS } from "./types"
 import type { EquippedSlots, Inputs } from "./types"
 
-// Exact Cartesian search below this ceiling. Larger spaces use complete-build
-// beam neighbours, capped by evaluations and rounds; never claim a global optimum.
-export const BEST_BUILD_LIMITS = {
-  exact: 1024,
-  evaluations: 4096,
-  beam: 16,
-  rounds: 8,
-  yieldEvery: 16,
-} as const
-
 export function bestBuildDps(inputs: Inputs): number {
   return runEngine(applyBowSet(applyArmorSet(withDerivedStats(inputs))), { collect: "totals" }).dps
 }
 
-type Scored = { equipped: EquippedSlots; dps: number; key: string }
+type Scored = { equipped: EquippedSlots; dps: number; key: string; priority: readonly number[] }
 const keyFor = (equipped: EquippedSlots) => JSON.stringify(GEAR_SLOTS.map((slot) => equipped[slot]))
-function compare(a: Scored, b: Scored): number {
-  if (a.dps !== b.dps) return b.dps - a.dps
+function compare(leftBuild: Scored, rightBuild: Scored): number {
+  for (let index = 0; index < leftBuild.priority.length; index++) {
+    if (leftBuild.priority[index] !== rightBuild.priority[index])
+      return rightBuild.priority[index] - leftBuild.priority[index]
+  }
+  if (leftBuild.dps !== rightBuild.dps) return rightBuild.dps - leftBuild.dps
   for (const slot of GEAR_SLOTS) {
-    const left = a.equipped[slot] ?? ""
-    const right = b.equipped[slot] ?? ""
+    const left = leftBuild.equipped[slot] ?? ""
+    const right = rightBuild.equipped[slot] ?? ""
     if (left !== right) return left < right ? -1 : 1
   }
   return 0
@@ -41,6 +36,8 @@ export async function findBestBuild(
   options: {
     cancelled?: () => boolean
     score?: (inputs: Inputs) => number
+    priority?: (inputs: Inputs, dps: number) => readonly number[]
+    evaluationLimit?: number
   } = {},
 ): Promise<BestBuildResult> {
   const ids = new Set<string>()
@@ -74,22 +71,27 @@ export async function findBestBuild(
     (count, pieces) => Math.min(Number.MAX_SAFE_INTEGER, count * pieces.length),
     1,
   )
-  const approximate = combinations > BEST_BUILD_LIMITS.exact
   const score = options.score ?? bestBuildDps
   const visited = new Map<string, Scored>()
   let best: Scored | undefined
   const cancelled = () => options.cancelled?.() ?? false
+  const evaluationLimit = options.evaluationLimit ?? BEST_BUILD_LIMITS.evaluations
+  if (
+    !Number.isInteger(evaluationLimit) ||
+    evaluationLimit < 1 ||
+    evaluationLimit > BEST_BUILD_LIMITS.evaluations
+  )
+    return error("engine-error")
+  const approximate = combinations > Math.min(BEST_BUILD_LIMITS.exact, evaluationLimit)
   async function evaluate(equipped: EquippedSlots): Promise<void> {
     const key = keyFor(equipped)
-    if (
-      visited.has(key) ||
-      cancelled() ||
-      (approximate && visited.size >= BEST_BUILD_LIMITS.evaluations)
-    )
-      return
-    const dps = score({ ...inputs, inventory, equipped })
+    if (visited.has(key) || cancelled() || (approximate && visited.size >= evaluationLimit)) return
+    const candidateInputs = { ...inputs, inventory, equipped }
+    const dps = score(candidateInputs)
     if (!Number.isFinite(dps)) throw new Error("Non-finite DPS")
-    const candidate = { equipped, dps, key }
+    const priority = options.priority?.(candidateInputs, dps) ?? []
+    if (!priority.every(Number.isFinite)) throw new Error("Non-finite priority")
+    const candidate = { equipped, dps, key, priority }
     visited.set(key, candidate)
     if (!best || compare(candidate, best) < 0) best = candidate
     if (visited.size % BEST_BUILD_LIMITS.yieldEvery === 0)
@@ -114,13 +116,13 @@ export async function findBestBuild(
           for (let index = 0; index < GEAR_SLOTS.length; index++) {
             for (const piece of candidates[index]) {
               await evaluate({ ...build.equipped, [GEAR_SLOTS[index]]: piece.id })
-              if (cancelled() || visited.size >= BEST_BUILD_LIMITS.evaluations) break
+              if (cancelled() || visited.size >= evaluationLimit) break
             }
-            if (cancelled() || visited.size >= BEST_BUILD_LIMITS.evaluations) break
+            if (cancelled() || visited.size >= evaluationLimit) break
           }
-          if (cancelled() || visited.size >= BEST_BUILD_LIMITS.evaluations) break
+          if (cancelled() || visited.size >= evaluationLimit) break
         }
-        if (visited.size === before || visited.size >= BEST_BUILD_LIMITS.evaluations) break
+        if (visited.size === before || visited.size >= evaluationLimit) break
       }
     } else {
       async function enumerate(index: number, equipped: EquippedSlots): Promise<void> {

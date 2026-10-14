@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 import { BestBuildPanel } from "./BestBuildPanel"
 import type { EquippedSlots, GearPiece, GearSlot, Inputs } from "../../../../engine/types"
 import { GEAR_SLOTS } from "../../../../engine/types"
@@ -26,6 +26,17 @@ import { useWordMaxAnalysis } from "../../../hooks/useWordMaxAnalysis"
 import type { CustomGraduationBuild } from "../../../../engine/customGraduationBuild"
 import type { HeirloomProfile } from "../../../../engine/heirloom"
 import styles from "./GearTab.module.scss"
+
+const GlobalStatBudgetPanel = lazy(() =>
+  import("../global-stat-budget-panel/GlobalStatBudgetPanel").then((module) => ({
+    default: module.GlobalStatBudgetPanel,
+  })),
+)
+const GraduationPlannerPanel = lazy(() =>
+  import("../graduation-planner-panel/GraduationPlannerPanel").then((module) => ({
+    default: module.GraduationPlannerPanel,
+  })),
+)
 
 interface Props {
   optimizerInputs?: Inputs
@@ -228,6 +239,10 @@ export function GearTab({
         />
       </div>
 
+      <Suspense fallback={null}>
+        <GlobalStatBudgetPanel inputs={optimizerInputs ?? engineInputs} />
+        <GraduationPlannerPanel inputs={optimizerInputs ?? engineInputs} profileId={profileId} />
+      </Suspense>
       <div className={styles.gearSplit}>
         <div className={styles.gearColumn}>
           <GearDetailsPanel
