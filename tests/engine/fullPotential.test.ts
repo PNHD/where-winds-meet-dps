@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { getFTPiece, ftDpsWhenEquipped } from "../../src/engine/fullPotential"
+import {
+  getFTPiece,
+  ftDpsWhenEquipped,
+  ftEvaluationWhenEquipped,
+} from "../../src/engine/fullPotential"
 import { computeDpsDeltas } from "../../src/engine/dpsWorker"
 import { runEngine } from "../../src/engine/dps"
 import {
@@ -215,6 +219,25 @@ describe("getFTPiece", () => {
 })
 
 describe("ftDpsWhenEquipped", () => {
+  it("reports the actual relay level without changing the existing numeric API or piece", () => {
+    const p = piece([w("crit", 0.05), w("momentum", 30), EMPTY, EMPTY, EMPTY], {
+      relayed: true,
+    })
+    const inputs = withInventory(p)
+    const before = JSON.stringify(inputs)
+    const result = ftEvaluationWhenEquipped(p, inputs)
+    expect(result.level).toBe(BREAKTHROUGH_LEVEL)
+    expect(result.dps).toBe(ftDpsWhenEquipped(p, inputs))
+    const deltas = computeDpsDeltas({
+      reqId: 1,
+      inputs,
+      baselineDps: runEngine(inputs).dps,
+      pieceIds: [p.id],
+    }).deltas[p.id]
+    expect(deltas.upgradedLevel).toBe(BREAKTHROUGH_LEVEL)
+    expect(deltas.fullPotentialLevel).toBe(BREAKTHROUGH_LEVEL)
+    expect(JSON.stringify(inputs)).toBe(before)
+  })
   it("returns DPS strictly higher than baseline for an obviously upgradable piece", () => {
     const p = piece([w("crit", 0.001), w("agility", 1), EMPTY, EMPTY, EMPTY])
     const inputs = withInventory(p, /* equipped */ true)

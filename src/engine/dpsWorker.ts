@@ -31,7 +31,11 @@ import {
 } from "./reattunement"
 import { attunementMax, attunementMin, attunementsFor, attunementLabelKey } from "./attunements"
 import { gearLevelForBreakthrough } from "../definitions/baseStats/breakthroughs"
-import { ftDpsWhenEquipped, ftDpsWithSlotEmpty } from "./fullPotential"
+import {
+  ftEvaluationWhenEquipped,
+  ftDpsWithSlotEmpty,
+  type FullPotentialDps,
+} from "./fullPotential"
 import { withCustomContent } from "./customContent"
 import { withDerivedStats } from "./derivedInputs"
 import {
@@ -52,6 +56,7 @@ import { GEAR_SLOTS } from "./types"
 import type {
   Arsenal,
   BowSet,
+  GearLevel,
   GearPiece,
   GearSlot,
   Inputs,
@@ -65,8 +70,10 @@ const OUTCOME_KEYS: readonly HitOutcome[] = ["abrasion", "normal", "crit", "affi
 export interface DpsDelta {
   current: number
   upgraded: number
+  upgradedLevel?: GearLevel
   fullPotential: number
   fullPotentialE: number
+  fullPotentialLevel?: GearLevel
 }
 
 export interface DpsWorkerRequest {
@@ -117,13 +124,13 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
   const byId = new Map<string, GearPiece>()
   for (const piece of inputs.inventory) byId.set(piece.id, piece)
 
-  const ftDpsByPieceId = new Map<string, number>()
-  function ftDpsFor(piece: GearPiece): number {
-    const known = ftDpsByPieceId.get(piece.id)
+  const ftByPieceId = new Map<string, FullPotentialDps>()
+  function ftFor(piece: GearPiece): FullPotentialDps {
+    const known = ftByPieceId.get(piece.id)
     if (known !== undefined) return known
-    const ftDps = ftDpsWhenEquipped(piece, inputs)
-    ftDpsByPieceId.set(piece.id, ftDps)
-    return ftDps
+    const ft = ftEvaluationWhenEquipped(piece, inputs)
+    ftByPieceId.set(piece.id, ft)
+    return ft
   }
 
   const ftRefBySlot = new Map<GearSlot, number>()
@@ -132,7 +139,7 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
     if (cached !== undefined) return cached
     const equippedId = inputs.equipped[slot]
     const equipped = equippedId ? (byId.get(equippedId) ?? null) : null
-    const ref = equipped ? ftDpsFor(equipped) : ftDpsWithSlotEmpty(slot, inputs)
+    const ref = equipped ? ftFor(equipped).dps : ftDpsWithSlotEmpty(slot, inputs)
     ftRefBySlot.set(slot, ref)
     return ref
   }
@@ -146,22 +153,21 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
     const unequippedBaseline = equipped ? applyPieceContribution(inputs, equipped, -1) : inputs
 
     const currentDps = dpsForSwap(unequippedBaseline, candidate)
-    const upgraded = maxRelayedClone(
-      candidate,
-      inputs,
-      gearLevelForBreakthrough(inputs.breakthrough),
-    )
+    const upgradedLevel = gearLevelForBreakthrough(inputs.breakthrough)
+    const upgraded = maxRelayedClone(candidate, inputs, upgradedLevel)
     const upgradedDps = dpsForSwap(unequippedBaseline, upgraded)
 
-    const ftCandidateDps = ftDpsFor(candidate)
-    const fullPotential = ftCandidateDps - baselineDps
-    const fullPotentialE = ftCandidateDps - ftReferenceForSlot(candidate.slot)
+    const ft = ftFor(candidate)
+    const fullPotential = ft.dps - baselineDps
+    const fullPotentialE = ft.dps - ftReferenceForSlot(candidate.slot)
 
     out[id] = {
       current: currentDps - baselineDps,
       upgraded: upgradedDps - baselineDps,
+      upgradedLevel,
       fullPotential,
       fullPotentialE,
+      fullPotentialLevel: ft.level,
     }
   }
 

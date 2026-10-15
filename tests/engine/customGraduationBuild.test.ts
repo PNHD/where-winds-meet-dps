@@ -56,6 +56,31 @@ describe("a build the user authored", () => {
     expect(offered.map((build) => build.id)).not.toContain(custom.id)
   })
 
+  it("rates an authored build against the class standard on its own rotation", () => {
+    const custom = customFrom(CLASS)
+    const before = JSON.stringify(custom)
+    const shipped = classDefinition(CLASS)!.graduationBuilds
+    const expected =
+      shipped.find((build) => build.standardized && build.rotationId === custom.rotationId) ??
+      shipped.find((build) => build.standardized)
+    expect(expected?.standardized).toBeDefined()
+    const offered = graduationBuildsForProfile({ classId: CLASS, customGraduationBuild: custom })
+    expect(offered.find((build) => build.id === custom.id)?.standardized).toEqual(
+      expected?.standardized,
+    )
+    expect(JSON.stringify(custom)).toBe(before)
+  })
+
+  it("falls back to the first class standard when no shipped build uses the custom rotation", () => {
+    const custom = { ...customFrom(CLASS), rotationId: "private-custom-rotation" }
+    const expected = classDefinition(CLASS)!.graduationBuilds.find((build) => build.standardized)
+    const offered = graduationBuildsForProfile({ classId: CLASS, customGraduationBuild: custom })
+    expect(offered.find((build) => build.id === custom.id)?.standardized).toEqual(
+      expected?.standardized,
+    )
+    expect(offered.find((build) => build.id === custom.id)?.rotationId).toBe(custom.rotationId)
+  })
+
   it("is followed once the profile names it", () => {
     const custom = customFrom(CLASS)
     const followed = followedGraduationBuild({
