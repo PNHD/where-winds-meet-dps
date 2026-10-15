@@ -151,6 +151,47 @@ afterEach(() => {
 })
 
 describe("dpsWorkerClient", () => {
+  it.each(["statLab", "graduationPlanner"] as const)(
+    "cancels %s without retiring the other integrated preview",
+    async (cancelledKind) => {
+      const client = await freshClient()
+      const delivered: string[] = []
+      const requests: Extract<UnsentRequest, { kind: "statLab" | "graduationPlanner" }>[] = [
+        { kind: "statLab", inputs: defaultInputs, changes: [], sourceKey: "integration-lab" },
+        {
+          kind: "graduationPlanner",
+          inputs: defaultInputs,
+          options: { mode: "budget", retune: false, farm: false, retuneCost: null },
+          sourceKey: "integration-planner",
+        },
+      ]
+      for (const request of requests) {
+        client.subscribeToDpsWorker(request.kind, (response) => delivered.push(response.kind))
+        client.postToDpsWorker(request)
+      }
+      await vi.runAllTimersAsync()
+      client.cancelDpsWorkerRequest(cancelledKind)
+      for (const [workerIndex, worker] of created.entries()) {
+        const request = worker.posted[0] as Extract<
+          WorkerRequest,
+          { kind: "statLab" | "graduationPlanner" }
+        >
+        if (request.kind === cancelledKind)
+          expect(worker.posted[1]).toEqual({ kind: `${cancelledKind}Cancel`, reqId: request.reqId })
+        respond(workerIndex, {
+          kind: request.kind,
+          reqId: request.reqId,
+          sourceKey: request.sourceKey,
+          result: { status: "cancelled" },
+        })
+      }
+      const otherKind = cancelledKind === "statLab" ? "graduationPlanner" : "statLab"
+      expect(delivered).toEqual([otherKind])
+      expect(client.retainedResponse(cancelledKind)).toBeNull()
+      expect(client.retainedResponse(otherKind)?.kind).toBe(otherKind)
+    },
+  )
+
   it("coalesces rapid posts of one kind into a single worker message", async () => {
     const client = await freshClient()
     client.subscribeToDpsWorker("ranking", () => {})

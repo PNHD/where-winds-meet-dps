@@ -429,6 +429,7 @@ function AppInner() {
               path="/overview"
               element={
                 <OverviewTab
+                  profileId={committed.activeId}
                   inputs={inputs}
                   engineInputs={engineInputs}
                   onChange={setInputs}
