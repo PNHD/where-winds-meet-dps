@@ -7,15 +7,19 @@ import { TextInput } from "../../../components/text-input/TextInput"
 import { Select } from "../../../components/select/Select"
 import {
   JOURNAL_LIMIT,
-  JOURNAL_MAX_CHARS,
+  JOURNAL_MAX_BYTES,
   TOOLKIT_KEY,
   journalText,
+  localCalendarDate,
   parseJournal,
   remainingSeconds,
   writeJournal,
   type JournalEntry,
 } from "../toolkitJournal"
 import styles from "./ToolsTab.module.scss"
+import { TimingLab } from "../timing-lab/TimingLab"
+import { ColorLab } from "../color-lab/ColorLab"
+import { LatencyLab } from "../latency-lab/LatencyLab"
 
 const MISSING_PATHS = [
   {
@@ -50,6 +54,7 @@ const ERROR_KEYS: Record<string, string> = {
   "tools.loadFailed": "tools.loadFailed",
   "tools.storageConflict": "tools.storageConflict",
   "tools.storageFailed": "tools.storageFailed",
+  "tools.lockUnavailable": "tools.lockUnavailable",
 }
 
 function readJournal() {
@@ -80,7 +85,7 @@ export function ToolsTab() {
   const [kind, setKind] = useState<JournalEntry["kind"]>("timer")
   const [name, setName] = useState("")
   const [minutes, setMinutes] = useState("10")
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(localCalendarDate)
   const [result, setResult] = useState<"win" | "loss" | "draw">("win")
   const [note, setNote] = useState("")
   const [now, setNow] = useState(Date.now)
@@ -92,20 +97,24 @@ export function ToolsTab() {
     return () => window.clearInterval(tick)
   }, [])
 
-  function save(next: JournalEntry[]) {
+  async function save(next: JournalEntry[]) {
     try {
-      const raw = writeJournal(next, journal.raw)
+      const raw = await writeJournal(next, journal.raw)
       setJournal({ entries: next, raw, error: "" })
       setError("")
       return true
     } catch (err) {
       const key = err instanceof Error ? err.message : ""
-      setError(key === "tools.storageConflict" ? key : "tools.storageFailed")
+      setError(
+        key === "tools.storageConflict" || key === "tools.lockUnavailable"
+          ? key
+          : "tools.storageFailed",
+      )
       return false
     }
   }
 
-  function add(event: React.FormEvent) {
+  async function add(event: React.FormEvent) {
     event.preventDefault()
     if (!entries || entries.length >= JOURNAL_LIMIT || !name.trim()) return
     const base = { id: crypto.randomUUID(), name: name.trim() }
@@ -116,7 +125,7 @@ export function ToolsTab() {
       entry = { ...base, kind, deadline: Date.now() + Math.round(duration * 60_000) }
     } else if (kind === "pity") entry = { ...base, kind, count: 0 }
     else entry = { ...base, kind, date, result, note }
-    if (save([...entries, entry])) {
+    if (await save([...entries, entry])) {
       setName("")
       setNote("")
     }
@@ -129,7 +138,7 @@ export function ToolsTab() {
     setPending(null)
     if (!file) return
     try {
-      if (file.size > JOURNAL_MAX_CHARS) throw new Error()
+      if (file.size > JOURNAL_MAX_BYTES) throw new Error()
       const text = await file.text()
       if (generation !== importGeneration.current) return
       setPending(parseJournal(text))
@@ -173,6 +182,9 @@ export function ToolsTab() {
         </ul>
         <p>{t("tools.missingDetail")}</p>
       </section>
+      <TimingLab />
+      <ColorLab />
+      <LatencyLab />
       <section className="panel" aria-label={t("tools.journal")}>
         <h2>{t("tools.journal")}</h2>
         <p>{t("tools.manualNotice")}</p>
@@ -215,7 +227,7 @@ export function ToolsTab() {
         {pending && (
           <section aria-label={t("tools.restorePreview")} className={styles.preview}>
             <h3>
-              {t("tools.restorePreview")} Â· {pending.length}
+              {t("tools.restorePreview")} · {pending.length}
             </h3>
             <p>{t("tools.restoreWarning")}</p>
             <ul>
@@ -228,13 +240,13 @@ export function ToolsTab() {
             <button
               type="button"
               className="btn"
-              onClick={() => {
+              onClick={async () => {
                 importGeneration.current++
                 download(
                   journal.raw ?? journalText(entries ?? []),
                   "wwm-personal-tools-before-restore.json",
                 )
-                if (save(pending)) setPending(null)
+                if (await save(pending)) setPending(null)
               }}
             >
               {t("tools.confirmRestore")}
@@ -327,7 +339,7 @@ export function ToolsTab() {
           {entries?.map((entry) => (
             <li key={entry.id}>
               <div>
-                <strong>{entry.name}</strong> Â· {t(KIND_KEYS[entry.kind])}
+                <strong>{entry.name}</strong> · {t(KIND_KEYS[entry.kind])}
               </div>
               {entry.kind === "timer" && (
                 <>
@@ -377,7 +389,7 @@ export function ToolsTab() {
               {entry.kind === "match" && (
                 <>
                   <p>
-                    {entry.date} Â· {t(RESULT_KEYS[entry.result])}
+                    {entry.date} · {t(RESULT_KEYS[entry.result])}
                   </p>
                   <p>{entry.note}</p>
                 </>

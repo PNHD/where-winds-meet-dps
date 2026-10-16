@@ -1,11 +1,15 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, expect, it } from "vitest"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { ConfirmProvider } from "../../src/ui/components/confirm-dialog/ConfirmDialog"
 import { ToolsTab } from "../../src/ui/features/tools/tools-tab/ToolsTab"
 import { TOOLKIT_KEY, parseJournal } from "../../src/ui/features/tools/toolkitJournal"
+import { installTestLocks } from "./toolkitTestLocks"
 
-beforeEach(() => localStorage.clear())
+beforeEach(() => {
+  localStorage.clear()
+  installTestLocks()
+})
 function open() {
   return render(
     <I18nProvider>
@@ -27,13 +31,14 @@ it("shows eleven paths while leaving calculator storage and the active profile a
   expect(localStorage.getItem(TOOLKIT_KEY)).toBeNull()
 })
 
-it("saves a personal deadline and keeps it across remounts", () => {
+it("saves a personal deadline and keeps it across remounts", async () => {
   const view = open()
   fireEvent.change(screen.getByLabelText("Label, banner or opponent alias"), {
     target: { value: "GvG warmup" },
   })
   fireEvent.change(screen.getByLabelText("Minutes from now"), { target: { value: "1" } })
   fireEvent.click(screen.getByRole("button", { name: "Save personal record" }))
+  await screen.findByText("GvG warmup")
   const entries = parseJournal(localStorage.getItem(TOOLKIT_KEY)!)
   expect(entries).toHaveLength(1)
   expect(entries[0].kind).toBe("timer")
@@ -50,7 +55,7 @@ it("keeps corrupt journal bytes instead of overwriting them", () => {
   expect(localStorage.getItem(TOOLKIT_KEY)).toBe("{broken")
 })
 
-it("counts manual pulls without implying odds or touching equipment", () => {
+it("counts manual pulls without implying odds or touching equipment", async () => {
   open()
   fireEvent.click(screen.getByRole("combobox", { name: "Record type" }))
   fireEvent.mouseDown(screen.getByRole("option", { name: /Manual pull counter/ }))
@@ -58,12 +63,18 @@ it("counts manual pulls without implying odds or touching equipment", () => {
     target: { value: "Personal banner" },
   })
   fireEvent.click(screen.getByRole("button", { name: "Save personal record" }))
-  fireEvent.click(screen.getByRole("button", { name: "Record one pull" }))
+  fireEvent.click(await screen.findByRole("button", { name: "Record one pull" }))
+  await waitFor(() =>
+    expect(parseJournal(localStorage.getItem(TOOLKIT_KEY)!)[0]).toMatchObject({ count: 1 }),
+  )
   expect(parseJournal(localStorage.getItem(TOOLKIT_KEY)!)[0]).toMatchObject({
     kind: "pity",
     count: 1,
   })
   fireEvent.click(screen.getByRole("button", { name: "Undo one pull" }))
+  await waitFor(() =>
+    expect(parseJournal(localStorage.getItem(TOOLKIT_KEY)!)[0]).toMatchObject({ count: 0 }),
+  )
   expect(parseJournal(localStorage.getItem(TOOLKIT_KEY)!)[0]).toMatchObject({ count: 0 })
   expect(screen.getByRole("button", { name: "Undo one pull" })).toBeDisabled()
 })

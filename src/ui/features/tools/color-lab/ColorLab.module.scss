@@ -1,0 +1,33 @@
+.text {
+  display: grid;
+  gap: 6px;
+}
+.text textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+}
+.colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 12px 0;
+}
+.colors label {
+  display: grid;
+  gap: 6px;
+}
+.colors input {
+  width: 64px;
+  min-height: 40px;
+}
+.preview {
+  min-height: 48px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  font-size: 24px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #171717;
+}

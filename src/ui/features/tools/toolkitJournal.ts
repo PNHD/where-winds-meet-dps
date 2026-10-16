@@ -1,6 +1,11 @@
 export const TOOLKIT_KEY = "pnhd.toolkit.v1"
 export const JOURNAL_LIMIT = 200
 export const JOURNAL_MAX_CHARS = 300_000
+export const JOURNAL_MAX_BYTES = JOURNAL_MAX_CHARS * 4
+
+export function localCalendarDate(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
 
 export type JournalEntry =
   | { id: string; kind: "timer"; name: string; deadline: number }
@@ -64,6 +69,7 @@ export function parseJournal(text: string): JournalEntry[] {
       typeof row.date === "string" &&
       /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
       Number.isFinite(Date.parse(row.date)) &&
+      new Date(row.date).toISOString().slice(0, 10) === row.date &&
       ["win", "loss", "draw"].includes(String(row.result)) &&
       typeof row.note === "string" &&
       row.note.length <= 500
@@ -84,13 +90,19 @@ export function journalText(entries: JournalEntry[]): string {
   return JSON.stringify({ v: 1, entries }, null, 2)
 }
 
-export function writeJournal(entries: JournalEntry[], expectedRaw: string | null): string {
+export async function writeJournal(
+  entries: JournalEntry[],
+  expectedRaw: string | null,
+): Promise<string> {
   const next = journalText(entries)
   parseJournal(next)
-  if (localStorage.getItem(TOOLKIT_KEY) !== expectedRaw) throw new Error("tools.storageConflict")
-  localStorage.setItem(TOOLKIT_KEY, next)
-  if (localStorage.getItem(TOOLKIT_KEY) !== next) throw new Error("tools.storageFailed")
-  return next
+  if (!navigator.locks) throw new Error("tools.lockUnavailable")
+  return navigator.locks.request(TOOLKIT_KEY, () => {
+    if (localStorage.getItem(TOOLKIT_KEY) !== expectedRaw) throw new Error("tools.storageConflict")
+    localStorage.setItem(TOOLKIT_KEY, next)
+    if (localStorage.getItem(TOOLKIT_KEY) !== next) throw new Error("tools.storageFailed")
+    return next
+  })
 }
 
 export function remainingSeconds(deadline: number, now: number): number {
