@@ -22,6 +22,7 @@ import { RotationTab } from "../ui/features/rotation/rotation-tab/RotationTab"
 import { RotationEditorPanel } from "../ui/features/rotation/rotation-editor-panel/RotationEditorPanel"
 import { SimulationTab } from "../ui/features/simulation/simulation-tab/SimulationTab"
 import { ProfilePanel } from "../ui/features/profile/profile-panel/ProfilePanel"
+import { ToolsTab } from "../ui/features/tools/tools-tab/ToolsTab"
 import { GearTab } from "../ui/features/gear/gear-tab/GearTab"
 import { TalentsOdditiesTab } from "../ui/features/talents/talents-oddities-tab/TalentsOdditiesTab"
 import { SkillsTab } from "../ui/features/skills/skills-tab/SkillsTab"
@@ -292,6 +293,7 @@ function AppInner() {
     { path: "/rotation-editor", label: t("rotation.rotationEditor") },
     { path: "/simulation", label: t("app.simulation") },
     { path: "/skills", label: t("app.skillEditor") },
+    { path: "/tools", label: t("tools.title") },
     { path: "/talents", label: t("common.enhancementOdditiesTalents"), align: "right" },
     { path: "/profile", label: t("common.profiles"), gapBefore: true },
   ]
@@ -405,6 +407,7 @@ function AppInner() {
         <fieldset className={styles.routeFields} disabled={areInputsLocked}>
           <Routes>
             <Route path="/" element={<Navigate to="/overview" replace />} />
+            <Route path="/tools" element={<ToolsTab />} />
             <Route
               path="/overview"
               element={

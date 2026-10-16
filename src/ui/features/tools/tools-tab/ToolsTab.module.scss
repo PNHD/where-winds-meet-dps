@@ -1,0 +1,71 @@
+@use "breakpoints";
+
+.tools {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+}
+.tools p {
+  color: var(--color-text-dim);
+  overflow-wrap: anywhere;
+}
+.paths,
+.entries {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.paths li,
+.entries li {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.paths {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.paths a {
+  color: var(--color-accent-bright);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+}
+.form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.form input {
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 36px;
+}
+.preview {
+  border: 1px solid var(--color-accent);
+  padding: 12px;
+  margin: 12px 0;
+}
+@include breakpoints.below(breakpoints.$bp-560) {
+  .form {
+    display: grid;
+  }
+  .paths {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
