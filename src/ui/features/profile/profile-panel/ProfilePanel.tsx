@@ -45,6 +45,7 @@ export function ProfilePanel({
   const [draftName, setDraftName] = useState("")
   const [pendingImport, setPendingImport] = useState<StoredProfile | null>(null)
   const [importError, setImportError] = useState("")
+  const importGeneration = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { metricsByProfileId, isPending } = useProfileMetrics(
     profiles,
@@ -99,6 +100,7 @@ export function ProfilePanel({
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const generation = ++importGeneration.current
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
@@ -107,9 +109,11 @@ export function ProfilePanel({
     try {
       if (file.size > MAX_PROFILE_IMPORT_CHARS) throw new Error(t("profile.importTooLarge"))
       const text = await file.text()
+      if (generation !== importGeneration.current) return
       const imported = importProfile(text)
       setPendingImport(imported)
     } catch (err) {
+      if (generation !== importGeneration.current) return
       const msg = err instanceof Error ? err.message : String(err)
       setImportError(`${t("common.importFailed")}: ${msg}`)
     }
@@ -150,13 +154,21 @@ export function ProfilePanel({
             type="button"
             className="btn primary"
             onClick={() => {
+              importGeneration.current++
               onImport(pendingImport)
               setPendingImport(null)
             }}
           >
             {t("profile.importConfirm")}
           </button>{" "}
-          <button type="button" className="btn" onClick={() => setPendingImport(null)}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              importGeneration.current++
+              setPendingImport(null)
+            }}
+          >
             {t("common.cancel")}
           </button>
         </section>
