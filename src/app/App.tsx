@@ -381,6 +381,9 @@ function AppInner() {
           onRotationClick={goToRotationTab}
         />
 
+        <p className={styles.modelNotice}>
+          <NavLink to="/tools">{t("tools.modelNotice")}</NavLink>
+        </p>
         <nav className={styles.tabs} role="tablist">
           {TABS.map((tab) => (
             <NavLink

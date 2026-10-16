@@ -40,6 +40,9 @@
   gap: 8px;
 }
 .form {
+  border: 0;
+  padding: 0;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: end;

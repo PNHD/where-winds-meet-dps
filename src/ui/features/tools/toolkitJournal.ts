@@ -8,6 +8,7 @@ export function localCalendarDate(date = new Date()): string {
 }
 
 export type JournalEntry =
+  | { id: string; kind: "marker"; name: string; mapId: string; x: number; y: number; done: boolean }
   | { id: string; kind: "timer"; name: string; deadline: number }
   | { id: string; kind: "pity"; name: string; count: number }
   | {
@@ -46,6 +47,22 @@ export function parseJournal(text: string): JournalEntry[] {
       throw new Error("tools.invalidBackup")
     ids.add(row.id)
     const base = { id: row.id, name: row.name }
+    if (
+      row.kind === "marker" &&
+      typeof row.mapId === "string" &&
+      /^[a-f0-9]{64}$/.test(row.mapId) &&
+      typeof row.x === "number" &&
+      Number.isFinite(row.x) &&
+      row.x >= 0 &&
+      row.x <= 1 &&
+      typeof row.y === "number" &&
+      Number.isFinite(row.y) &&
+      row.y >= 0 &&
+      row.y <= 1 &&
+      typeof row.done === "boolean"
+    ) {
+      return { ...base, kind: "marker", mapId: row.mapId, x: row.x, y: row.y, done: row.done }
+    }
     if (
       row.kind === "timer" &&
       typeof row.deadline === "number" &&

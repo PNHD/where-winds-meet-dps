@@ -1,14 +1,62 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { beforeEach, expect, it } from "vitest"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { ConfirmProvider } from "../../src/ui/components/confirm-dialog/ConfirmDialog"
 import { ToolsTab } from "../../src/ui/features/tools/tools-tab/ToolsTab"
-import { TOOLKIT_KEY, parseJournal } from "../../src/ui/features/tools/toolkitJournal"
+import {
+  TOOLKIT_KEY,
+  parseJournal,
+  journalText,
+  type JournalEntry,
+} from "../../src/ui/features/tools/toolkitJournal"
 import { installTestLocks } from "./toolkitTestLocks"
 
 beforeEach(() => {
   localStorage.clear()
   installTestLocks()
+})
+
+it("disables the record form while a shared storage lock is pending", async () => {
+  let release!: () => void
+  Object.defineProperty(navigator, "locks", {
+    configurable: true,
+    value: {
+      request: (_name: string, callback: () => string) =>
+        new Promise<string>((resolve) => {
+          release = () => resolve(callback())
+        }),
+    },
+  })
+  open()
+  const input = screen.getByLabelText("Label, banner or opponent alias")
+  fireEvent.change(input, { target: { value: "Queued record" } })
+  fireEvent.click(screen.getByRole("button", { name: "Save personal record" }))
+  expect(input).toBeDisabled()
+  await act(async () => release())
+  expect(input).not.toBeDisabled()
+  expect(screen.getByText("Queued record")).toBeTruthy()
+})
+
+it("previews a supported Unicode journal file above 300 KB without writing before confirmation", async () => {
+  const rows: JournalEntry[] = Array.from({ length: 200 }, (_, index) => ({
+    id: String(index),
+    kind: "match",
+    name: "\u20ac".repeat(80),
+    date: "2026-10-16",
+    result: "win",
+    note: "\u20ac".repeat(500),
+  }))
+  const text = journalText(rows),
+    size = new TextEncoder().encode(text).length
+  expect(size).toBeGreaterThan(300_000)
+  const { container } = open()
+  fireEvent.change(container.querySelector('input[aria-label="Import journal backup"]')!, {
+    target: { files: [{ size, text: async () => text }] },
+  })
+  const preview = await screen.findByRole("region", { name: "Journal import preview" })
+  expect(localStorage.getItem(TOOLKIT_KEY)).toBeNull()
+  fireEvent.click(within(preview).getByRole("button", { name: "Cancel" }))
+  expect(localStorage.getItem(TOOLKIT_KEY)).toBeNull()
 })
 function open() {
   return render(

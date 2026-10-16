@@ -12,6 +12,7 @@ import { useProfileMetrics } from "../../../hooks/useProfileMetrics"
 import { formatCompactDamage, formatNumber } from "../../../utils/numberFormatting"
 import { TextInput } from "../../../components/text-input/TextInput"
 import styles from "./ProfilePanel.module.scss"
+import { ProfileSharePreview } from "../profile-share-preview/ProfileSharePreview"
 
 interface Props {
   profiles: StoredProfile[]
@@ -45,6 +46,7 @@ export function ProfilePanel({
   const [draftName, setDraftName] = useState("")
   const [pendingImport, setPendingImport] = useState<StoredProfile | null>(null)
   const [importError, setImportError] = useState("")
+  const [sharing, setSharing] = useState<StoredProfile | null>(null)
   const importGeneration = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { metricsByProfileId, isPending } = useProfileMetrics(
@@ -139,6 +141,13 @@ export function ProfilePanel({
         />
       </div>
 
+      {sharing && (
+        <ProfileSharePreview
+          profile={sharing}
+          onDownload={handleExport}
+          onClose={() => setSharing(null)}
+        />
+      )}
       {importError && <p role="alert">{importError}</p>}
       {pendingImport && (
         <section className="panel" aria-label={t("profile.importPreview")}>
@@ -264,6 +273,9 @@ export function ProfilePanel({
                 </button>
                 <button type="button" className="btn" onClick={() => handleExport(profile)}>
                   {t("common.export")}
+                </button>
+                <button type="button" className="btn" onClick={() => setSharing(profile)}>
+                  {t("profile.shareEquipped")}
                 </button>
                 <div className={styles.actionsSpacer} />
                 <button

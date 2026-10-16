@@ -20,6 +20,7 @@ import styles from "./ToolsTab.module.scss"
 import { TimingLab } from "../timing-lab/TimingLab"
 import { ColorLab } from "../color-lab/ColorLab"
 import { LatencyLab } from "../latency-lab/LatencyLab"
+import { MapLab } from "../map-lab/MapLab"
 
 const MISSING_PATHS = [
   {
@@ -48,7 +49,13 @@ const MISSING_PATHS = [
   },
 ]
 const RESULT_KEYS = { win: "tools.win", loss: "tools.loss", draw: "tools.draw" }
-const KIND_KEYS = { timer: "tools.timer", pity: "tools.pity", match: "tools.match" }
+const KIND_KEYS = {
+  timer: "tools.timer",
+  pity: "tools.pity",
+  match: "tools.match",
+  marker: "tools.marker",
+}
+const FORM_KINDS = ["timer", "pity", "match"] as const
 const ERROR_KEYS: Record<string, string> = {
   "tools.invalidBackup": "tools.invalidBackup",
   "tools.loadFailed": "tools.loadFailed",
@@ -82,7 +89,8 @@ export function ToolsTab() {
   const [journal, setJournal] = useState(readJournal)
   const [error, setError] = useState("")
   const [pending, setPending] = useState<JournalEntry[] | null>(null)
-  const [kind, setKind] = useState<JournalEntry["kind"]>("timer")
+  const [saving, setSaving] = useState(false)
+  const [kind, setKind] = useState<(typeof FORM_KINDS)[number]>("timer")
   const [name, setName] = useState("")
   const [minutes, setMinutes] = useState("10")
   const [date, setDate] = useState(localCalendarDate)
@@ -98,6 +106,8 @@ export function ToolsTab() {
   }, [])
 
   async function save(next: JournalEntry[]) {
+    if (saving) return false
+    setSaving(true)
     try {
       const raw = await writeJournal(next, journal.raw)
       setJournal({ entries: next, raw, error: "" })
@@ -111,6 +121,8 @@ export function ToolsTab() {
           : "tools.storageFailed",
       )
       return false
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -185,6 +197,7 @@ export function ToolsTab() {
       <TimingLab />
       <ColorLab />
       <LatencyLab />
+      <MapLab entries={entries} onSave={save} onDelete={(id) => void remove(id)} />
       <section className="panel" aria-label={t("tools.journal")}>
         <h2>{t("tools.journal")}</h2>
         <p>{t("tools.manualNotice")}</p>
@@ -263,74 +276,80 @@ export function ToolsTab() {
             </button>
           </section>
         )}
-        <form onSubmit={add} className={styles.form}>
-          <label>
-            {t("tools.kind")}
-            <Select
-              ariaLabel={t("tools.kind")}
-              value={kind}
-              onChange={(value) => setKind(value as JournalEntry["kind"])}
-              options={Object.entries(KIND_KEYS).map(([value, key]) => ({ value, label: t(key) }))}
-            />
-          </label>
-          <label>
-            {t("tools.entryName")}
-            <TextInput
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={80}
-              required
-            />
-          </label>
-          {kind === "timer" && (
+        <form onSubmit={add}>
+          <fieldset className={styles.form} disabled={saving || !entries}>
             <label>
-              {t("tools.minutes")}
-              <input
-                type="number"
-                min={1}
-                max={1440}
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
+              {t("tools.kind")}
+              <Select
+                ariaLabel={t("tools.kind")}
+                value={kind}
+                onChange={(value) => setKind(value as typeof kind)}
+                options={FORM_KINDS.map((value) => ({ value, label: t(KIND_KEYS[value]) }))}
+              />
+            </label>
+            <label>
+              {t("tools.entryName")}
+              <TextInput
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
                 required
               />
             </label>
-          )}
-          {kind === "match" && (
-            <>
+            {kind === "timer" && (
               <label>
-                {t("tools.matchDate")}
+                {t("tools.minutes")}
                 <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
                   required
                 />
               </label>
-              <label>
-                {t("tools.result")}
-                <Select
-                  ariaLabel={t("tools.result")}
-                  value={result}
-                  onChange={(value) => setResult(value as typeof result)}
-                  options={Object.entries(RESULT_KEYS).map(([value, key]) => ({
-                    value,
-                    label: t(key),
-                  }))}
-                />
-              </label>
-              <label>
-                {t("tools.note")}
-                <TextInput value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
-              </label>
-            </>
-          )}
-          <button
-            type="submit"
-            className="btn primary"
-            disabled={!entries || entries.length >= JOURNAL_LIMIT}
-          >
-            {t("tools.record")}
-          </button>
+            )}
+            {kind === "match" && (
+              <>
+                <label>
+                  {t("tools.matchDate")}
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  {t("tools.result")}
+                  <Select
+                    ariaLabel={t("tools.result")}
+                    value={result}
+                    onChange={(value) => setResult(value as typeof result)}
+                    options={Object.entries(RESULT_KEYS).map(([value, key]) => ({
+                      value,
+                      label: t(key),
+                    }))}
+                  />
+                </label>
+                <label>
+                  {t("tools.note")}
+                  <TextInput
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    maxLength={500}
+                  />
+                </label>
+              </>
+            )}
+            <button
+              type="submit"
+              className="btn primary"
+              disabled={!entries || entries.length >= JOURNAL_LIMIT}
+            >
+              {t("tools.record")}
+            </button>
+          </fieldset>
         </form>
         <p>
           {entries?.length ?? 0} / {JOURNAL_LIMIT}
