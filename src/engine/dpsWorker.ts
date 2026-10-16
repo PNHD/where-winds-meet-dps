@@ -775,7 +775,7 @@ const cancelledReqIds = new Set<number>()
 const activeBestBuildIds = new Set<number>()
 const activeStatLabIds = new Set<number>()
 
-self.onmessage = (e: MessageEvent<WorkerRequest>) => {
+const handleWorkerMessage = (e: MessageEvent<WorkerRequest>) => {
   const req = e.data
   if (req.kind === "graduationPlannerCancel") {
     if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
@@ -885,6 +885,10 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     const res = computeGraduation(req)
     ;(self as unknown as Worker).postMessage({ kind: "graduation", ...res })
   }
+}
+
+if (typeof self !== "undefined" && typeof document === "undefined") {
+  self.onmessage = handleWorkerMessage
 }
 
 export {
