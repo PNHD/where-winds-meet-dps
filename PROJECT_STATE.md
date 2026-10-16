@@ -53,8 +53,9 @@ STORAGE_ROUTE: existing Linear issue plus root repo reports/state; logs/screensh
 WRITE_RECEIPT: Linear PNH-50 In Progress readback2026-10-16T11:35:22.926Z; related tasks not duplicated/falsely closed.
 EVIDENCE_URI: E:/AIProjects/repository/pnh-50-evidence-20261016.
 NEXT_ACTION: reconnect verified production browser for read-only after-receipt and obtain explicit CI-only branch-push/draft-PR authorization; keep merge and every deployment on HOLD. Recheck CI workflows/hooks before any authorized push.
-NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:NONE until owner resolves the manual gate, then RESUME this session/worktree.
-SESSION_ACTION: WAIT_FOR_D3.
+NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:NONE
+SESSION_ACTION: WAIT_FOR_D3
 USER_ACTION: reconnect the previously verified production BrowserSkill profile; decide whether to authorize only task-branch push/draft PR/required CI, with no merge or deployment.
 MANUAL_GATE: green unchanged full-suite acceptance and live production after-receipt are required. Current prompt forbids external push/PR publication/deployment; no inherited one-upload permission remains.
-RUNTIME_RECOVERY: NONE. Local loopback built preview remains at http://127.0.0.1:5210/; disposable QA browser closed. Airtable/Space sync is not asserted; no new rows created.
+RUNTIME_RECOVERY: NONE
+After authorization, resume this session/worktree. Local loopback built preview remains at http://127.0.0.1:5210/; disposable QA browser closed. Airtable/Space sync is not asserted; no new rows created.
