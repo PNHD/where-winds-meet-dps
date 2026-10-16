@@ -631,8 +631,17 @@ export function exportProfile(profile: StoredProfile): string {
   return JSON.stringify(blob, null, 2)
 }
 
+export const MAX_PROFILE_IMPORT_CHARS = 5_000_000
+
 export function importProfile(text: string): StoredProfile {
-  const parsed = JSON.parse(text) as unknown
+  if (text.length > MAX_PROFILE_IMPORT_CHARS)
+    throw new Error("Profile exceeds the 5 MB import limit")
+  const parsed = JSON.parse(text, (key, value: unknown) => {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      throw new Error("Profile contains an unsafe property")
+    }
+    return value
+  }) as unknown
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Imported value is not an object")
   }
