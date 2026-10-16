@@ -62,16 +62,14 @@ it("makes only eight bounded same-origin credential-free requests and retains fa
   }
 })
 it("cancels an in-flight probe and starts no later requests", async () => {
-  const fetcher = vi
-    .spyOn(globalThis, "fetch")
-    .mockImplementation(
-      (_url, options) =>
-        new Promise((_resolve, reject) =>
-          options?.signal?.addEventListener("abort", () => reject(new Error("aborted")), {
-            once: true,
-          }),
-        ),
-    )
+  const fetcher = vi.spyOn(globalThis, "fetch").mockImplementation(
+    (_url, options) =>
+      new Promise((_resolve, reject) =>
+        options?.signal?.addEventListener("abort", () => reject(new Error("aborted")), {
+          once: true,
+        }),
+      ),
+  )
   const controller = new AbortController(),
     pending = measureBrowserLatency(controller.signal)
   controller.abort()

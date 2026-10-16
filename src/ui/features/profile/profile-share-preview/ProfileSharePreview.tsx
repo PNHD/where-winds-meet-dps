@@ -17,9 +17,10 @@ export function ProfileSharePreview({
 }) {
   const { t } = useI18n()
   const [name, setName] = useState(() => t("profile.sharedName"))
-  const [reviewed, setReviewed] = useState(false)
+  const [reviewedText, setReviewedText] = useState("")
   const shared = useMemo(() => equippedShare(profile, name), [profile, name])
   const text = useMemo(() => exportProfile(shared), [shared])
+  const reviewed = reviewedText === text
   return (
     <section className="panel" aria-label={t("profile.sharePreview")}>
       <h2>{t("profile.sharePreview")}</h2>
@@ -31,7 +32,7 @@ export function ProfileSharePreview({
           value={name}
           onChange={(event) => {
             setName(event.target.value)
-            setReviewed(false)
+            setReviewedText("")
           }}
         />
       </label>
@@ -43,7 +44,7 @@ export function ProfileSharePreview({
         <input
           type="checkbox"
           checked={reviewed}
-          onChange={(event) => setReviewed(event.target.checked)}
+          onChange={(event) => setReviewedText(event.target.checked ? text : "")}
         />
         {t("profile.shareConsent")}
       </label>

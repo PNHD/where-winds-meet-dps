@@ -71,3 +71,30 @@ it("requires explicit file review before download and invalidates consent when t
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
   expect(onClose).toHaveBeenCalledTimes(1)
 })
+
+it("requires renewed consent whenever another profile or changed payload replaces the reviewed file", () => {
+  const onDownload = vi.fn()
+  const profile = { id: "a", name: "Private A", inputs: structuredClone(defaultInputs) }
+  const preview = (value: typeof profile) => (
+    <I18nProvider>
+      <ProfileSharePreview profile={value} onDownload={onDownload} onClose={() => {}} />
+    </I18nProvider>
+  )
+  const { rerender } = render(preview(profile))
+  const checkbox = screen.getByRole("checkbox")
+  const button = screen.getByRole("button", { name: "Download reviewed build" })
+  fireEvent.click(checkbox)
+  expect(button).toBeEnabled()
+  const next = { ...profile, id: "b", inputs: { ...profile.inputs, breakthrough: 20 } }
+  rerender(preview(next))
+  expect(checkbox).not.toBeChecked()
+  expect(button).toBeDisabled()
+  fireEvent.click(button)
+  expect(onDownload).not.toHaveBeenCalled()
+  fireEvent.click(checkbox)
+  fireEvent.click(button)
+  expect(onDownload).toHaveBeenCalledWith(equippedShare(next, "Shared build"))
+  rerender(preview({ ...next, inputs: { ...next.inputs, breakthrough: 21 } }))
+  expect(checkbox).not.toBeChecked()
+  expect(button).toBeDisabled()
+})
