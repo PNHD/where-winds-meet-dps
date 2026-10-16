@@ -26,49 +26,55 @@ vi.mock("../../src/definitions/innerWays/registry", async (importOriginal) => {
 })
 
 const { defaultInputs } = await import("../../src/engine/defaults")
-const { saveProfiles } = await import("../../src/storage")
+const { loadProfiles, saveProfiles } = await import("../../src/storage")
 const { BREAKTHROUGH_RELEASES } = await import("../../src/definitions/baseStats/breakthroughs")
-const { INNER_WAYS } = await import("../../src/definitions/innerWays/registry")
 const { App } = await import("../../src/app/App")
 
-const HIGHEST_CONFIRMED = Math.max(...INNER_WAYS.map((innerWay) => innerWay.confirmedBreakthrough))
-
-const AT_CONFIRMED_BREAKTHROUGH = BREAKTHROUGH_RELEASES.filter(
-  (release) => release.breakthrough <= HIGHEST_CONFIRMED,
-).reduce((latest, release) => (release.at > latest.at ? release : latest)).at
+const LATEST_RELEASE = BREAKTHROUGH_RELEASES.reduce((latest, release) =>
+  release.at > latest.at ? release : latest,
+).at
 
 const ASKED_CLASS = "Stonesplit Strength"
 const CONFIRMED_CLASS = "Bellstrike Umbra"
-
-function dismissDialog(): void {
-  act(() => {
-    vi.advanceTimersByTime(15_000)
-  })
-  fireEvent.click(screen.getByRole("button", { name: "Close" }))
-}
 
 function chooseClass(className: string): void {
   fireEvent.click(screen.getByRole("combobox", { name: "Class" }))
   fireEvent.mouseDown(screen.getByRole("option", { name: new RegExp(className) }))
 }
 
-function askedClassName(): string | null {
-  const dialog = screen.queryByRole("dialog")
-  return dialog?.querySelector("dd:not([class*='live'])")?.textContent ?? null
+function expectNoPrompt(): void {
+  expect(
+    screen.queryByRole("dialog", { name: "New Breakthrough — Data Needed" }),
+  ).not.toBeInTheDocument()
+  expect(screen.queryByRole("timer")).not.toBeInTheDocument()
+}
+
+function storedData(): Record<string, string | null> {
+  return Object.fromEntries(
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith("wwm."))
+      .sort()
+      .map((key) => [key, localStorage.getItem(key)]),
+  )
 }
 
 beforeEach(() => {
   localStorage.clear()
   window.location.hash = ""
   vi.useFakeTimers()
-  vi.setSystemTime(AT_CONFIRMED_BREAKTHROUGH)
+  vi.setSystemTime(LATEST_RELEASE)
   vi.spyOn(document, "hasFocus").mockReturnValue(true)
   saveProfiles({
     profiles: [
       { id: "only", name: "Only", inputs: { ...defaultInputs, classId: "stonesplitStrength" } },
+      { id: "other", name: "Other", inputs: { ...defaultInputs, classId: "bellstrikeUmbra" } },
     ],
     activeId: "only",
   })
+  localStorage.setItem("wwm.locale", "en")
+  localStorage.setItem("wwm.lastSeenVersion", "0.7.3")
+  localStorage.setItem("wwm.contributors", "[]")
+  loadProfiles()
 })
 
 afterEach(() => {
@@ -76,38 +82,50 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe("asking for breakthrough data as the active class changes", () => {
-  it("asks about the class the app opens on", () => {
+describe("automatic breakthrough data requests stay disabled", () => {
+  it("opens a stale-data profile without a modal or fifteen-second hold", () => {
+    const before = storedData()
     render(<App />)
-    expect(askedClassName()).toBe(ASKED_CLASS)
-  })
-
-  it("holds the close for fifteen seconds", () => {
-    render(<App />)
-
-    expect(screen.getByRole("button", { name: "Close" })).toBeDisabled()
+    expectNoPrompt()
     act(() => {
-      vi.advanceTimersByTime(15_000)
+      vi.advanceTimersByTime(16_000)
     })
-    expect(screen.getByRole("button", { name: "Close" })).toBeEnabled()
+    expectNoPrompt()
+    expect(storedData()).toEqual(before)
   })
 
-  it("asks nothing when the profile moves to a class whose inner ways are confirmed", () => {
+  it("stays disabled after the app is remounted from saved data", () => {
+    const first = render(<App />)
+    expectNoPrompt()
+    first.unmount()
     render(<App />)
-    dismissDialog()
-
-    chooseClass(CONFIRMED_CLASS)
-
-    expect(askedClassName()).toBeNull()
+    expectNoPrompt()
   })
 
-  it("does not ask twice about a class already dismissed this session", () => {
+  it("does not open when changing classes, including returning to stale data", () => {
     render(<App />)
-    dismissDialog()
     chooseClass(CONFIRMED_CLASS)
-
+    expectNoPrompt()
     chooseClass(ASKED_CLASS)
+    expectNoPrompt()
+  })
 
-    expect(askedClassName()).toBeNull()
+  it("stays disabled while navigating and switching saved profiles", () => {
+    render(<App />)
+    const before = JSON.parse(localStorage.getItem("wwm.profiles")!)
+    fireEvent.click(screen.getByRole("tab", { name: "Profiles" }))
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Select" }).find((b) => !b.hasAttribute("disabled"))!,
+    )
+    expectNoPrompt()
+    fireEvent.click(screen.getByRole("tab", { name: "Gear" }))
+    expectNoPrompt()
+    fireEvent.click(screen.getByRole("tab", { name: "Profiles" }))
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Select" }).find((b) => !b.hasAttribute("disabled"))!,
+    )
+    fireEvent.click(screen.getByRole("tab", { name: "Overview" }))
+    expectNoPrompt()
+    expect(JSON.parse(localStorage.getItem("wwm.profiles")!)).toEqual(before)
   })
 })

@@ -31,8 +31,6 @@ import { SimulationToast, SIMULATION_PATH } from "../ui/layout/simulation-toast/
 import { DpsActivityToast } from "../ui/layout/dps-activity-toast/DpsActivityToast"
 import { GraduationBuildDialog } from "../ui/features/gear/graduation-build-dialog/GraduationBuildDialog"
 import { SetupWizard, type SetupMode } from "../ui/features/setup/setup-wizard/SetupWizard"
-import { BreakthroughDataDialog } from "../ui/layout/breakthrough-data-dialog/BreakthroughDataDialog"
-import { breakthroughDataRequestFor } from "../ui/layout/breakthrough-data-dialog/breakthroughDataRequest"
 import { activeRotationName } from "../ui/features/rotation/rotationOptions"
 import { followedGraduationBuild } from "../engine/graduation"
 import { graduationBuildKey } from "../i18n/contentKeys"
@@ -105,16 +103,6 @@ function AppInner() {
   const [wizard, setWizard] = useState<{ mode: SetupMode; defaultName: string } | null>(() =>
     initial.firstRun ? { mode: "first-run", defaultName: "" } : null,
   )
-
-  const [breakthroughAskedClassIds, setBreakthroughAskedClassIds] = useState<readonly string[]>([])
-  const breakthroughRequest = useMemo(
-    () => (initial.firstRun ? null : breakthroughDataRequestFor(activeDraft.classId)),
-    [initial.firstRun, activeDraft.classId],
-  )
-  const breakthroughAsk =
-    breakthroughRequest && !breakthroughAskedClassIds.includes(breakthroughRequest.classId)
-      ? breakthroughRequest
-      : null
 
   const draftJson = useMemo(() => JSON.stringify(activeDraft), [activeDraft])
   const isDirty = draftJson !== lastSavedJson
@@ -329,14 +317,6 @@ function AppInner() {
           initialInputs={blankInputs}
           onFinish={handleWizardFinish}
           onCancel={wizard.mode === "new-profile" ? () => setWizard(null) : undefined}
-        />
-      )}
-      {breakthroughAsk && (
-        <BreakthroughDataDialog
-          request={breakthroughAsk}
-          onClose={() =>
-            setBreakthroughAskedClassIds((asked) => [...asked, breakthroughAsk.classId])
-          }
         />
       )}
       {(graduationDialogOpen || mustChooseGraduationBuild) && (
