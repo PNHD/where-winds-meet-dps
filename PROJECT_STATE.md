@@ -1,10 +1,10 @@
 # PNH-50 consolidated upstream + toolkit + CI
 
-PM_STATE_SNAPSHOT v4 ? 2026-10-19. Supersedes v3; navigation only, reverify mutable Git/CI/browser metadata.
+PM_STATE_SNAPSHOT v5 - 2026-10-19. Supersedes v4; navigation only, reverify mutable Git/CI/browser metadata.
 
 GOAL: finish the source-qualified pinned upstream/browser-toolkit batch and CI-only Draft PR gate, preserving private state and numerical honesty.
-CURRENT_GATE: CI_ONLY_ACCEPTANCE_AND_SOURCE_QUALIFICATION_HOLD
-ACCEPTANCE: PARTIAL; source-blocked coupled timeline/schema and six numerical paths remain incomplete even if engineering CI passes.
+CURRENT_GATE: DRAFT_PR_CI_AND_SOURCE_QUALIFICATION_HOLD
+ACCEPTANCE: PARTIAL; source-blocked coupled timeline/schema and six numerical paths remain incomplete. Full Linux CI passed at9a3fca5e; local Windows full suite retained one unchanged5000ms proc timeout. Final exact-candidate results belong to the adjacent manifest and Draft PR checks.
 SOURCE_OF_TRUTH: current Git + final exact-ref manifest; existing Linear PNH-50/comment549febd1-3652-4f34-a7a8-27bd00658af9 and PNH-9; actual owning Draft PR/CI and read-only browser receipts.
 SURFACE: ORCA_CODEX
 MODEL: gpt-6.1-sol / high, verified Orca terminal; no model or permission setting changed.
@@ -27,7 +27,9 @@ FINAL_REF: adjacent pnh-50-consolidated-evidence-20261019/final-manifest.json, g
 - Private immutable/transformed copies: existing local-private-uat directories, outside Git. Direct V33/V34 dry runs PASS semantic/idempotence/JSON recovery checks; no live PNHD migration registered.
 - Real production storage after-read through verified BrowserSkill5a91e763 PASS: four calculator values byte-identical;21 items/eight equipped, schema29. No storage writes or profile substitution.
 - Matched accepted-profile benchmark: DPS63037.7016093223 both; base warm29.8-41.7ms versus adapted24.0-35.0ms, narrow same-host sample only.
-- PNH-48 production/rollback deployment67170a11-a02b-4544-b968-b708ad763940 remains HOLD for any publication. Verify current read-only receipt; never infer browser storage integrity from Cloudflare.
+- Single existing Draft PR: https://github.com/PNHD/where-winds-meet-dps/pull/5; first CI https://github.com/PNHD/where-winds-meet-dps/actions/runs/39212449354 passed3662/3662 at9a3fca5e. Subsequent exact-head checks are authoritative.
+- Built-browser QA at1440/375/390 passed toolkit, copied-storage preservation, real-worker pool max4, budget cancellation and class/profile changes. Mobile Gear toolbar clipping found visually and repaired with the existing wrapping toolbar class; final-ref QA is required.
+- PNH-48 deployment67170a11-a02b-4544-b968-b708ad763940 is the last verified historical production receipt. A later read-only Wrangler check lacked credentials; build-info.json returns HTML, so neither establishes a fresh deployment identity. No reauthentication or deployment occurred; browser storage evidence stays independent.
 
 ## Permission and continuation
 
@@ -35,9 +37,10 @@ PERMISSIONS: inherited Full Access / FULL_LOCAL_D0_D2; one sanitized task-branch
 
 STORAGE_ROUTE: existing Linear PNH-50 plus these repo reports and adjacent evidence; zero new Airtable records. No raw private gear/screenshots/storage/logs are published.
 EVIDENCE_URI: E:/AIProjects/repository/pnh-50-consolidated-evidence-20261019/final-manifest.json
-NEXT_ACTION: read final exact-candidate local/CI/browser receipts; finish any failing authorized check before return. Once those pass, owner supplies/approves independent Global2.3 source evidence for deferred model qualification; merge/deploy remain HOLD.
-NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:RESUME
-SESSION_ACTION: CONTINUE_SAME_SESSION until all independent local/CI work is complete; then WAIT_FOR_D3 for the documented source/manual gate.
+NEXT_ACTION: owner selects/provides the independently reusable Global2.3 evidence package for deferred numerical qualification. Read final-manifest.json and Draft PR5 checks first; any unfinished engineering check continues in the same session before this handoff takes effect. Merge/deploy remain HOLD.
+NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:NONE
+SESSION_ACTION: WAIT_FOR_D3
+HANDOFF_EFFECTIVE: only after final exact-candidate CI and built-browser receipts are complete; pending receipts are never assumed green.
 MANUAL_GATE: current-patch numerical evidence for coupled timeline/data/schema adoption and six unsupported paths; no automatic release authority.
 WRITE_RECEIPT: final receipt records existing PNH-50 tracker readback, single Draft PR and exact CI runs; do not infer remote success from this snapshot.
 RUNTIME_RECOVERY: CONTINUATION_SESSION

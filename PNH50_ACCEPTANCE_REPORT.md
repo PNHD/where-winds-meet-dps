@@ -6,7 +6,7 @@
 
 - Recovered clean checkpoint: `0a2d5208ace294db7e67ad268652f3c67c15acaa`, tree `cc6c62260b4426eba4ccea6e5c3518438007c5f5`; frozen Git bundle and private backup manifest retained outside Git.
 - Worktree/branch: `E:/AIProjects/repository/pnh-50-free-web-toolkit-20261016`, `PNHD/pnh-50-free-web-toolkit-20261016`. Current Git metadata outranks this navigation report.
-- Independently reviewed executable source: `4d246ba91ee8e62dabc4a2b05effd40e0ffcb080`, tree `b8684932c59ce3562b4c7ad8c63910f0d5fe624d`, **PASS**. An earlier accessibility finding was repaired and regression-tested. The subsequent memo-test commit splits parity into individual unchanged-deadline cases; no executable behavior change.
+- Independently reviewed executable source: `4d246ba91ee8e62dabc4a2b05effd40e0ffcb080`, tree `b8684932c59ce3562b4c7ad8c63910f0d5fe624d`, **PASS**. An earlier accessibility finding was repaired and regression-tested. Subsequent memo-test changes were independently reviewed at9a3fca5e/treeee4ff136: PASS, no original tests/deadlines/fixtures changed. Final mobile Gear toolbar repair reuses the existing wrapping toolbar class; its bounded review receipt is separate.
 - Final candidate SHA/tree and complete local check receipts are recorded in adjacent `pnh-50-consolidated-evidence-20261019/final-manifest.json` and `final-validation.json`. Their creation/readback is required; this document alone does not assert that a check ran.
 - The single owning Draft PR and its exact-head CI are the remote check authority. Compare its head SHA with the final manifest, and distinguish the GitHub synthetic merge SHA from its tree. PR #3/#4 and main remain untouched.
 
@@ -26,14 +26,14 @@ Pinned local toolchain: Node26.10.0/pnpm10.33.0/Vitest4.1.10. Dependency, lockfi
 
 | Gate | Owning evidence / interpretation |
 |---|---|
-| Full suite and format/lint/typecheck/build on final candidate | `final-validation.json` plus individual raw logs; require every exit0 and unchanged final source metadata |
+| Full suite and format/lint/typecheck/build on final candidate | Owning exact-head GitHub CI is the complete Linux gate; local `final-validation.json` and raw logs are reported separately. A local failing receipt is never relabeled PASS. |
 | Original timeout diagnosis | Original candidate/control logs retained; same two cases recur on pristine control. First integration full run cleared those cases but failed stale Worker mocks and catalogue order; repaired with focused evidence. This does not prove every historic scheduler cause. |
 | New mechanism regressions | Memo/direct, sharded/direct, seeded parity, bounded eviction/exception cleanup, worker termination/coalescing/partial simulation cancellation, visible sweep scope, budget ownership, import tier, gear total and accessible keyboard selection |
 | Independent review | `independent-review.json`: immutable source PASS after repaired P2 accessibility issue; reviewer did not run suite/browser/AT |
 | Browser acceptance | Final built-app receipts at1440/375/390 in adjacent evidence; must exercise actual interactions and check no forced popup, layout and storage. Emulation is not physical-device or screen-reader acceptance. |
 | CI | Single Draft PR, exact head and actual GitHub run/check URLs/results; no deployment job or protection relaxation |
 
-Historical failing attempts are retained. No numerical expected DPS fixture was regenerated merely to get green.
+At9a3fca5e, CI run39212449354 passed319 files/3662 tests plus all other gates. Local Windows final-r2 passed3661/3662, with the unchanged sampled-proc convergence case timing out at5009ms; focused original files passed34/34. The same400-seed workload profiled at2000.552ms outside full-suite contention, and CI completed it in2016ms. This supports a host/load sensitivity hypothesis, not a proved scheduler root cause or a timeout-fix claim. A two-line allocation prototype showed no meaningful gain and was discarded. No deadline, retry, worker policy or assertion was relaxed. Historical failing attempts are retained. No numerical expected DPS fixture was regenerated merely to get green.
 
 ## Matched performance and migration safety
 
@@ -51,7 +51,7 @@ Verified normal BrowserSkill profile `5a91e763` production-origin after-read **P
 
 Read-only Cloudflare Settings UI: `wonton-wwm` Git integration points to `PNHD/wwm-calc`, automatic deployments disabled, no deploy hooks. This batch pushes only `PNHD/where-winds-meet-dps`. GitHub candidate/base workflow inspection shows verification only. No Cloudflare settings were changed.
 
-Known production/rollback remains PNH-48 source `15d9bc77f4129f1640b03fa2524adda4e2e9494d`, deployment `67170a11-a02b-4544-b968-b708ad763940`; final read-only deployment receipt must confirm live state. Cloudflare deployment is not evidence for localStorage integrity.
+Last verified historical production/rollback is PNH-48 source `15d9bc77f4129f1640b03fa2524adda4e2e9494d`, deployment `67170a11-a02b-4544-b968-b708ad763940`; a later read-only Wrangler request lacked credentials and the public build-info route returned SPA HTML. Fresh deployment identity is therefore UNKNOWN; no reauthentication was attempted. The earlier Settings/production-browser receipts retain their actual timestamps. Cloudflare deployment is not evidence for localStorage integrity.
 
 ## Owner gate
 
