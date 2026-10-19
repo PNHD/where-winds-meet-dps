@@ -1,61 +1,43 @@
-# PNH-50 continuous free browser toolkit
+# PNH-50 consolidated upstream + toolkit + CI
 
-PM_STATE_SNAPSHOT v3 — 2026-10-16. Supersedes PNH-50 v2; PNH-48 remains production and rollback.
+PM_STATE_SNAPSHOT v4 ? 2026-10-19. Supersedes v3; navigation only, reverify mutable Git/CI/browser metadata.
 
-Goal: independently supported WWM browser functionality, free guest access, no mandatory installation, ads or payment gates. Donation absent pending an approved destination.
-CURRENT_GATE: D3_ACCEPTANCE_HOLD. ACCEPTANCE: PARTIAL; release is not authorized or ready. See PNH50_ACCEPTANCE_REPORT.md and the final external manifest for exact final source metadata.
-SURFACE: ORCA_CODEX. MODEL: gpt-6.1-sol. EFFORT: high. ACCOUNT_POLICY: AUTO_HEADROOM.
-SESSION_REF: 01a1447c-079e-7880-932f-095b4d57f172.
-WORKTREE: E:/AIProjects/repository/pnh-50-free-web-toolkit-20261016.
-BRANCH: PNHD/pnh-50-free-web-toolkit-20261016.
-SOURCE_OF_TRUTH: exact local Git, owner task, Linear PNH-50 and PNH-9/11/12/13/14/16. Stale GitHub main was not used.
+GOAL: finish the source-qualified pinned upstream/browser-toolkit batch and CI-only Draft PR gate, preserving private state and numerical honesty.
+CURRENT_GATE: CI_ONLY_ACCEPTANCE_AND_SOURCE_QUALIFICATION_HOLD
+ACCEPTANCE: PARTIAL; source-blocked coupled timeline/schema and six numerical paths remain incomplete even if engineering CI passes.
+SOURCE_OF_TRUTH: current Git + final exact-ref manifest; existing Linear PNH-50/comment549febd1-3652-4f34-a7a8-27bd00658af9 and PNH-9; actual owning Draft PR/CI and read-only browser receipts.
+SURFACE: ORCA_CODEX
+MODEL: gpt-6.1-sol / high, verified Orca terminal; no model or permission setting changed.
+ACCOUNT_POLICY: AUTO_HEADROOM
+LOGICAL_PARENT_SESSION: 01a1447c-079e-7880-932f-095b4d57f172
+CURRENT_CONTINUATION_SESSION: 01a152c2-1e6e-7b01-98e1-1e6c6d5a2044
+WORKTREE: E:/AIProjects/repository/pnh-50-free-web-toolkit-20261016
+BRANCH: PNHD/pnh-50-free-web-toolkit-20261016
+BASE_PRODUCTION: 15d9bc77f4129f1640b03fa2524adda4e2e9494d
+RECOVERED_CHECKPOINT: 0a2d5208ace294db7e67ad268652f3c67c15acaa / cc6c62260b4426eba4ccea6e5c3518438007c5f5, clean with no competing writer.
+REVIEWED_EXECUTABLE: 4d246ba91ee8e62dabc4a2b05effd40e0ffcb080 / b8684932c59ce3562b4c7ad8c63910f0d5fe624d; independent source review PASS; later test-only parity split.
+FINAL_REF: adjacent pnh-50-consolidated-evidence-20261019/final-manifest.json, git rev-parse HEAD/HEAD^{tree} and owning Draft PR head are authoritative.
 
-## Verified references and preservation
+## Scope and evidence
 
-- Base/production commit: `15d9bc77f4129f1640b03fa2524adda4e2e9494d`; tree `fc0f6a9c5531a2597e8e08405f1daa5ebe6de93a`.
-- Rollback: `E:/AIProjects/repository/pnh-48-disable-breakthrough-modal-20261016`, still clean at that exact ref; existing dist retained.
-- Cloudflare project `wonton-wwm`, canonical https://wonton-wwm.pages.dev/, deployment `67170a11-a02b-4544-b968-b708ad763940`; read-only deployment metadata confirmed production main/source15d9bc7. No publication performed.
-- Reviewed code candidate: `aadaf0b10f7ad4434c864553a37372e9be0d27c9`; tree `f573a8c1d032cb18923ee5c134f08a1fe4211416`.
-- Recovery verified all four production wwm.* values byte-identical to accepted PNH-48:21 inventory/eight equipped, all rolls/equipment/rotations/selected-profile hashes preserved. See storage-before.json. Raw backup stays outside Git. Live after-receipt pending: verified BrowserSkill instance5a91e763 is currently disconnected; never substitute another profile.
-- Engine, game data, definitions, migrations, dependencies, original test files/configuration remain unchanged from production. T96 inputs are not migrated to T100 assumptions.
+- UPSTREAM_SYNC_MATRIX.md: pinned A3c9d366/B55c5cb7; complete local1,014/118-file diffs, source/dependency groups and explicit deferrals.
+- WEB_FEATURE_GAP_MATRIX.md: eleven-path capability and measured-validation matrix, exact missing source packages and retained/incomplete toolkit scope.
+- PNH50_ACCEPTANCE_REPORT.md: engineering/review/performance/migration/browser/privacy acceptance interpretation.
+- Adjacent pnh-50-consolidated-evidence-20261019: immutable original checkpoint bundle, original194-file hash verification, final local validation/CI/QA/manifest receipts; no private raw browser values.
+- Private immutable/transformed copies: existing local-private-uat directories, outside Git. Direct V33/V34 dry runs PASS semantic/idempotence/JSON recovery checks; no live PNHD migration registered.
+- Real production storage after-read through verified BrowserSkill5a91e763 PASS: four calculator values byte-identical;21 items/eight equipped, schema29. No storage writes or profile substitution.
+- Matched accepted-profile benchmark: DPS63037.7016093223 both; base warm29.8-41.7ms versus adapted24.0-35.0ms, narrow same-host sample only.
+- PNH-48 production/rollback deployment67170a11-a02b-4544-b968-b708ad763940 remains HOLD for any publication. Verify current read-only receipt; never infer browser storage integrity from Cloudflare.
 
-## Implemented local slices
+## Permission and continuation
 
-- Bounded/prototype-safe profile import, preview/explicit add consent, stale file-read cancellation.
-- Equipped-only build sharing: spare inventory/private gear labels/notes/original IDs removed, public name/full JSON review, consent bound to exact serialized file. Custom text/settings remain disclosed for review.
-- Tools route: eleven-path coverage/provenance and persistent model-scope notice; no unsupported DPS results or Breakthrough popup.
-- Private journal: personal/GvG deadlines, manual banner counters and match notes; backup/previewed restore with recovery download. Web Locks reject stale tabs. Separate pnhd.toolkit.v1 key.
-- Manual PvP timing worksheet, user-observed assumptions, no built-in move/stagger table or guaranteed result.
-- RGB/hex Unicode signature preview with literal text; no unverified in-game code compatibility.
-- Opt-in eight-sample same-origin credential-free HTTP latency/variation, cancel/timeouts/failures; explicitly not game UDP ping.
-- Personal map: bounded user-owned/licensed PNG, image-bound normalized markers/completion, keyboard/pointer controls and journal backup. No map upload; transient image must be reattached after reload.
+PERMISSIONS: inherited Full Access / FULL_LOCAL_D0_D2; one sanitized task-branch push, one Draft PR and bounded same-branch CI fixes authorized. No force push, main/PR3/4 changes, merge/auto-merge, ready conversion, tags/releases, deployment, spend, credential/account/settings changes or destructive data operations.
 
-## Source and product limits
-
-Full eleven-path validation/provenance: WEB_FEATURE_GAP_MATRIX.md. Umbra/Strength/Splendor/Draught retain bounded existing anchors. Jade is modeled but lacks measured qualification. Might/Deluge/Wind/Dust/Kite/Wings lack complete independently qualified numerical/mechanical packages: SOURCE_BLOCKED / DPS_UNAVAILABLE, including gear/recommendation/rotation/Stat Lab/Graduation qualification. No cross-class borrowing or guessed DPS.
-
-Current Global2.3 numerical requalification, built-in PvP data, verified pity odds/carryover, game color codes, world-map catalog and permitted live-player API remain source-blocked. Advanced Library/Training/community/team workflows are not completed; public cloud services need separate privacy/moderation/cost/authorization review. Overall eleven-class completion is not claimed.
-
-REA6.5.0 ran only against disposable PNHD localhost through scoped Node/CDP. Official README/browser guide/install/license/disclaimer archived. No global config/end-user dependency. Ratz live observation remains UNKNOWN: ordinary observation failed and automatic approval review rejected a separate browser launch as “blocked by policy.” No prohibited automation/API/source extraction/protected or GPL implementation reuse.
-
-## Acceptance and evidence
-
-Pinned Node26.10.0/pnpm10.33.0/Vitest4.1.10. Exact logs/hashes: adjacent candidate-aada-validation.json.
-- Earlier slices: full3561/3561 and3571/3571 passed with desktop/mobile emulation. Historical slice evidence does not establish final exact-ref acceptance.
-- Current candidate: full3587/3589, two five-second timeouts in unchanged bestBuildAdvisor/parseSimulation tests. Format/lint/typecheck/build PASS. All failed receipts retained; no policy weakening.
-- Initial pristine run3557/3558 had a simulation timeout. Fresh clean exact-production control3543/3558 had15 timeouts, including both candidate failures; its tree remained unchanged. This demonstrates baseline recurrence, not complete causal proof or a waiver. Focused unchanged bestBuildAdvisor/parseSimulation diagnostic34/34 passed; not full-suite acceptance.
-- Independent reviews repaired stale import reads, cross-tab/date/Unicode issues and cross-profile consent. Exact aadaf0b1 consent repair PASS. Reviewer did not run full suite. See adjacent independent-review.md.
-- Final built-app browser QA at1440/375/390 PASS on exact aadaf0b1 with empty tracked diff: import preview/cancel/add, eleven-path coverage, deadlines/pulls/matches/reload, timing/color/eight credential-free HTTP samples, sharing/map markers and reattachment. Native two-tab Web Locks reject a stale writer, pending form disabled, invalid calendar rejected, Unicode restore/cancel/confirm and exact recovery download verified. Profile switching invalidates sharing consent. Each16-second popup check showed none, DPS63037.70 settled, all four keys byte-identical in isolated copies. Emulation is not physical-device acceptance; live production after-read remains UNKNOWN because the verified browser disconnected.
-- Desktop sharing and mobile journal/map/HTTP screenshots visually inspected. Stronger document.clientWidth assertions used for final browser receipts. Earlier failed QA attempts are retained; background-tab/wait/download-path harness changes were outside source. Specific causes of every intermittent harness wait are not proven.
-
-PERMISSIONS: FULL_LOCAL_D0_D2; approval never/danger-full-access inherited. No push/merge/deploy/spend/credentials/destructive migration/publication. Prior PNH-48 upload authorization consumed.
-STORAGE_ROUTE: existing Linear issue plus root repo reports/state; logs/screenshots adjacent pnh-50-evidence-20261016; private backups E:/Projects/WWM-BUILD/local-private-uat/pnh-50-20261016 never commit/upload. Zero Airtable creates; shared-space sync not asserted.
-WRITE_RECEIPT: Linear PNH-50 In Progress readback2026-10-16T11:35:22.926Z; related tasks not duplicated/falsely closed.
-EVIDENCE_URI: E:/AIProjects/repository/pnh-50-evidence-20261016.
-NEXT_ACTION: reconnect verified production browser for read-only after-receipt and obtain explicit CI-only branch-push/draft-PR authorization; keep merge and every deployment on HOLD. Recheck CI workflows/hooks before any authorized push.
-NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:NONE
-SESSION_ACTION: WAIT_FOR_D3
-USER_ACTION: reconnect the previously verified production BrowserSkill profile; decide whether to authorize only task-branch push/draft PR/required CI, with no merge or deployment.
-MANUAL_GATE: green unchanged full-suite acceptance and live production after-receipt are required. Current prompt forbids external push/PR publication/deployment; no inherited one-upload permission remains.
-RUNTIME_RECOVERY: NONE
-After authorization, resume this session/worktree. Local loopback built preview remains at http://127.0.0.1:5210/; disposable QA browser closed. Airtable/Space sync is not asserted; no new rows created.
+STORAGE_ROUTE: existing Linear PNH-50 plus these repo reports and adjacent evidence; zero new Airtable records. No raw private gear/screenshots/storage/logs are published.
+EVIDENCE_URI: E:/AIProjects/repository/pnh-50-consolidated-evidence-20261019/final-manifest.json
+NEXT_ACTION: read final exact-candidate local/CI/browser receipts; finish any failing authorized check before return. Once those pass, owner supplies/approves independent Global2.3 source evidence for deferred model qualification; merge/deploy remain HOLD.
+NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:RESUME
+SESSION_ACTION: CONTINUE_SAME_SESSION until all independent local/CI work is complete; then WAIT_FOR_D3 for the documented source/manual gate.
+MANUAL_GATE: current-patch numerical evidence for coupled timeline/data/schema adoption and six unsupported paths; no automatic release authority.
+WRITE_RECEIPT: final receipt records existing PNH-50 tracker readback, single Draft PR and exact CI runs; do not infer remote success from this snapshot.
+RUNTIME_RECOVERY: CONTINUATION_SESSION

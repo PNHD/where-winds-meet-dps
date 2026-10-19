@@ -1,6 +1,64 @@
+# PNH-50 consolidated capability and source qualification
+
+2026-10-19. Supersedes mutable acceptance/permission statements in the retained October16 audit below. Current authority permits only the sanitized PNH-50 task branch, one Draft PR and its CI. No merge, main changes or deployment.
+
+The complete Linear consolidated task and PNH-9 were reread through the reconnected connector. Pinned two-source groups, dependencies and deferrals are in [UPSTREAM_SYNC_MATRIX.md](UPSTREAM_SYNC_MATRIX.md). Raw complete local diffs cover 1,014 MIT and 118 GPL changed paths; GPL remains research-only.
+
+## Eleven-path capability and validation matrix
+
+`Retained` means the existing bounded engine/tools remain available, not that Global2.3 has been revalidated. Four measured anchors predate this batch. There are five numerical registry entries and eleven metadata/coverage entries.
+
+| Official path | Engine registered | Metadata / weapons | Numerical qualification | Rotation tests | Measured validation | Best Build / Stat Lab / aggregate Graduation |
+|---|---|---|---|---|---|---|
+| Bellstrike Umbra | YES | READY | Retained bounded calibrated model; current-patch requalification incomplete | Existing anchor/regressions retained | Existing anchor only | Retained within model scope |
+| Stonesplit Strength | YES | READY | Retained bounded calibrated model; current-patch requalification incomplete | Existing anchor/regressions retained | Existing anchor only | Retained within model scope |
+| Bellstrike Splendor | YES | READY | Retained bounded calibrated model; current-patch requalification incomplete | Existing anchor/regressions retained | Existing anchor only | Retained within model scope |
+| Bamboocut Draught | YES | READY | Retained bounded calibrated model; current-patch requalification incomplete | Existing measured rotation retained | Existing anchor only | Retained; GPL planner-only status does not remove PNHD functionality |
+| Silkbind Jade | YES | READY | Existing numerical model, measured qualification DATA_NEEDED | Existing engine/mechanics tests | NO | Available with existing model-scope disclosure; not qualified as measured |
+| Stonesplit Might | NO | READY: Thundercry Blade / Stormbreaker Spear | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+| Silkbind Deluge | NO | READY: Panacea Fan / Soulshade Umbrella | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+| Bamboocut Wind | NO | READY: Infernal Twinblades / Mortal Rope Dart | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+| Bamboocut Dust | NO | READY: Everspring Umbrella / Unfettered Rope Dart | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+| Bamboocut Kite | NO | READY: Heavenwill Gauntlets / Skygrasp Rope Dart | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+| Silkbind Wings | NO | READY: Museflow Waist Drum / Willowbend Fan | SOURCE_BLOCKED / DPS_UNAVAILABLE | No qualified complete numerical rotation | NO | Unavailable |
+
+## New source attempts and exact remaining facts
+
+Reassessed both pins, their full local diffs/commit ancestry, MIT class barrel/changelogs, the current PNH-9 contract, [official October15 balance notice](https://www.wherewindsmeetgame.com/news/official/PathBalance1015.html), [Wings developer letter](https://www.wherewindsmeetgame.com/news/official/1014devletter.html) and the official update referenced by PNH-9. GitHub/Exa research used agent-reach; primary notice checked directly. No Ratz automated access or GPL data extraction into the app.
+
+| Path | New/rechecked usable primary evidence | Exact missing package before numerical implementation |
+|---|---|---|
+| Might | Thunder Shock Vulnerability and cast-experience changes in the Global2.3 notice; MIT still does not register this path | Absolute HP/Qi vulnerability magnitude, complete skill rank coefficients/hit/cancel frames, resource/buff state transitions, independently qualified gear/Inner Way effects, legal complete rotation and matched measured anchor |
+| Deluge | Official path identity/weapon pair and current pinned GPL availability are research leads; no MIT model added | Independently reusable absolute attack/healing scaling, target/overlap rules, hit cadence/cooldowns, resource/Inner Way mechanics, gear effects and measured complete rotation |
+| Wind | Official Breaking Point indicator and Arena attunement delta; GPL Breaking Point eligibility change is a lead | Full Infernal/Mortal skill and rodent-trigger coefficients/cadence, resource thresholds, PvE versus Arena rules, legal pool/cap evidence and measured complete rotation |
+| Dust | Official path identity plus new GPL dust/gear progression tests reviewed as leads only | Independent Everspring/Unfettered hit/DoT coefficients, stack/charge/cancel/timing mechanics, Inner Way/gear pools and a complete measured rotation; GPL fixtures cannot fill these gaps |
+| Kite | Official 12% Falcon's Pursuit relative increase and Qi adjustment | Pre-change absolute coefficients to which 12% applies, exact hit/Qi/Heaven's Will timing/state rules, gear/Inner Way effects and a measured complete rotation |
+| Wings | Official Museflow/Willowbend identity and rhythm gameplay; official shared Silkbind retuning-library statement in PNH-9; new GPL release is a research lead | Absolute skill/rhythm coefficients and frames, three rhythm state transitions, Harmony Song/Inner Way effects, rank/tier values, legal numeric gear pools/caps and an independently measured full rotation |
+
+Relative patch deltas, repository availability flags and copyrighted implementation fixtures cannot establish this missing base package. No independently complete missing-path model was found in this bounded pinned audit. Future source acquisition needs owner-provided/licensed in-game observations, not a new guessed DPS dropdown.
+
+## Toolkit completion status
+
+| Capability | Complete applicable client-side workflow | Still incomplete / source boundary |
+|---|---|---|
+| Import | Bounded preview/cancel/explicit add, ID remapping and stale read guard retained; tier header OCR and T100 All Mystic mappings adapted | Per-piece set/Bow metadata importer and real-device OCR calibration deferred |
+| Share | Equipped-only redaction, JSON review and consent bound to exact bytes retained | Public backend/community share registry not authorized; workspace backup is separate from ID-remapping profile import |
+| RGB | Unicode literal-text RGB/hex preview retained | In-game signature code syntax/limits unverified |
+| PvP | Manual observed timing worksheet and private matches retained | No qualified built-in move/stagger table, game telemetry or server guarantee |
+| Private tracking | Timers, counters, matches, bounded journal backup/restore and native Web Locks conflict handling retained | No verified pity odds/carryover or shared schedules/background alarm guarantee |
+| HTTP estimate | Opt-in bounded same-origin credential-free estimate, cancellation/timeouts retained | Not game UDP ping or a qualified regional game-server estimate |
+| Map | User-owned/licensed PNG plus image-bound personal markers/completion and journal backup retained | No bundled game map/coordinate catalogue or live-player API; image reattachment required |
+| Optimizers | Existing aggregate Graduation/Stat Lab preserved; Best Build budget presets/cancellation and visible inventory sweeps added | Coupled new timeline/Qi, set/food model, extra encounter families and current-patch recalibration deferred as documented |
+
+Browser-only/free guest contract unchanged: no EXE, mandatory extension, paid account, ads, subscriptions or donation UI. Production storage was read-only and byte-identical; raw payloads remain outside Git. Final browser/CI acceptance belongs to the final receipt, not historical October16 screenshots.
+
+---
+
+## Retained October16 feature audit and provenance
+
 # WWM browser toolkit gap and source audit
 
-PNH-50 / 2026-10-16. Production base `15d9bc77f4129f1640b03fa2524adda4e2e9494d`, tree `fc0f6a9c5531a2597e8e08405f1daa5ebe6de93a`. Current task overrides all historical release authority: local only, no upload/push/merge.
+PNH-50 / 2026-10-16. Production base `15d9bc77f4129f1640b03fa2524adda4e2e9494d`, tree `fc0f6a9c5531a2597e8e08405f1daa5ebe6de93a`. Historical local-only scope; superseded by the current CI-only authority above. Merge/deployment remain HOLD.
 
 ## Observation and rights boundary
 
