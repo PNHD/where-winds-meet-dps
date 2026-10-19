@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react"
+import { useId, Fragment, useRef, useState } from "react"
 import { DropdownGroupLabel, DropdownList, DropdownOption } from "../dropdown-list/DropdownList"
 import styles from "./Select.module.scss"
 
@@ -49,6 +49,7 @@ export function Select<Value extends string>({
   compact,
   className,
 }: Props<Value>) {
+  const listId = useId()
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -110,6 +111,8 @@ export function Select<Value extends string>({
           (className ? ` ${className}` : "")
         }
         role="combobox"
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && options[highlight] ? `${listId}-${highlight}` : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
@@ -124,6 +127,7 @@ export function Select<Value extends string>({
         <span className={styles.chevron} aria-hidden="true" />
       </button>
       <DropdownList
+        id={listId}
         open={open}
         anchorRef={triggerRef}
         onClose={() => setOpen(false)}
@@ -135,6 +139,7 @@ export function Select<Value extends string>({
               <DropdownGroupLabel label={option.group} />
             )}
             <DropdownOption
+              id={`${listId}-${index}`}
               value={option.value}
               label={option.label}
               meta={option.meta}

@@ -4,6 +4,7 @@ import { useAnchoredDropdown } from "../../hooks/useAnchoredDropdown"
 import styles from "./DropdownList.module.scss"
 
 interface DropdownListProps {
+  id?: string
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
   onClose: () => void
@@ -13,6 +14,7 @@ interface DropdownListProps {
 }
 
 export function DropdownList({
+  id,
   open,
   anchorRef,
   onClose,
@@ -47,6 +49,7 @@ export function DropdownList({
   if (!open || !position) return null
   return createPortal(
     <ul
+      id={id}
       ref={listRef}
       className={styles.list}
       role="listbox"
@@ -67,6 +70,7 @@ export function DropdownList({
 }
 
 interface DropdownOptionProps {
+  id?: string
   value?: string
   label: string
   meta?: string
@@ -80,6 +84,7 @@ interface DropdownOptionProps {
 }
 
 export function DropdownOption({
+  id,
   value,
   label,
   meta,
@@ -91,8 +96,14 @@ export function DropdownOption({
   onSelect,
   onHover,
 }: DropdownOptionProps) {
+  const optionRef = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    if (highlighted) optionRef.current?.scrollIntoView?.({ block: "nearest" })
+  }, [highlighted])
   return (
     <li
+      id={id}
+      ref={optionRef}
       role="option"
       data-value={value}
       title={title}

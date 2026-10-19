@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useId, useMemo, useRef, useState } from "react"
 import { DropdownEmpty, DropdownList, DropdownOption } from "../dropdown-list/DropdownList"
 import styles from "./Combobox.module.scss"
 
@@ -28,6 +28,7 @@ export function Combobox({
   className,
   "aria-label": ariaLabel,
 }: Props) {
+  const listId = useId()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [highlight, setHighlight] = useState(0)
@@ -80,6 +81,10 @@ export function Combobox({
         disabled={disabled}
         autoComplete="off"
         role="combobox"
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={
+          open && filtered[clampedHighlight] ? `${listId}-${clampedHighlight}` : undefined
+        }
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-autocomplete="list"
@@ -116,12 +121,13 @@ export function Combobox({
           {selectedDetail}
         </span>
       )}
-      <DropdownList open={open} anchorRef={wrapperRef} onClose={close}>
+      <DropdownList id={listId} open={open} anchorRef={wrapperRef} onClose={close}>
         {filtered.length === 0 ? (
           <DropdownEmpty text="—" />
         ) : (
           filtered.map((opt, index) => (
             <DropdownOption
+              id={`${listId}-${index}`}
               key={opt.value}
               label={opt.label}
               meta={opt.detail}

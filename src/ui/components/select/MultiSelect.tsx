@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useId, useRef, useState } from "react"
 import { DropdownEmpty, DropdownList, DropdownOption } from "../dropdown-list/DropdownList"
 
 export interface MultiSelectOption {
@@ -14,6 +14,7 @@ interface Props {
 }
 
 export function MultiSelect({ label, options, selected, onChange }: Props) {
+  const listId = useId()
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -28,7 +29,14 @@ export function MultiSelect({ label, options, selected, onChange }: Props) {
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
-    if (!open) return
+    if (!open) {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault()
+        setHighlight(event.key === "ArrowUp" ? Math.max(0, options.length - 1) : 0)
+        setOpen(true)
+      }
+      return
+    }
     if (event.key === "ArrowDown") {
       event.preventDefault()
       setHighlight(Math.min(highlight + 1, options.length - 1))
@@ -49,6 +57,10 @@ export function MultiSelect({ label, options, selected, onChange }: Props) {
         ref={triggerRef}
         type="button"
         className="btn"
+        role="combobox"
+        aria-label={label}
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && options[highlight] ? `${listId}-${highlight}` : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((previous) => !previous)}
@@ -58,6 +70,7 @@ export function MultiSelect({ label, options, selected, onChange }: Props) {
         {count > 0 ? ` (${count})` : ""} ▾
       </button>
       <DropdownList
+        id={listId}
         open={open}
         anchorRef={triggerRef}
         onClose={() => setOpen(false)}
@@ -67,6 +80,7 @@ export function MultiSelect({ label, options, selected, onChange }: Props) {
         {options.length === 0 && <DropdownEmpty text="—" />}
         {options.map((option, index) => (
           <DropdownOption
+            id={`${listId}-${index}`}
             key={option.id}
             value={option.id}
             label={option.label}
