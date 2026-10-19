@@ -26,19 +26,21 @@ function workerJobs(inputs: Inputs): Record<string, () => unknown> {
     optionId: option.id,
     rotation: option.rotation,
   }))
+  // Match one dispatched work partition; ordered full merges have a separate parity test.
   const jobs: Record<string, () => unknown> = {
     equippedDeltas: () =>
       workerCompute.computeEquippedDeltas({
         reqId: 1,
         inputs: engineInputs,
         baselineDps,
+        slots: equippedPiece ? [equippedPiece.slot] : [],
       }),
     dpsDeltas: () =>
       workerCompute.computeDpsDeltas({
         reqId: 1,
         inputs: engineInputs,
         baselineDps,
-        pieceIds: engineInputs.inventory.map((piece) => piece.id),
+        pieceIds: equippedPiece ? [equippedPiece.id] : [],
       }),
     ranking: () =>
       workerCompute.computeRankingRequest({

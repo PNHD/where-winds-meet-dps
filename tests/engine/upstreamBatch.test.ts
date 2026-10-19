@@ -1,5 +1,6 @@
 // Scoped to the retained Umbra model; parity is not a new measured anchor.
 import { describe, expect, it } from "vitest"
+import { syntheticGraduationInputs } from "../fixtures/syntheticGraduation"
 import { defaultInputs } from "../../src/engine/defaults"
 import { runEngine } from "../../src/engine/dps"
 import { allSlotsUnequipLoss } from "../../src/engine/gearAnalysis"
@@ -23,7 +24,22 @@ const inputs = { ...defaultInputs, classId: "bellstrikeUmbra" }
 
 describe("pinned upstream adaptations", () => {
   it.each(["ranking", "gearAnalysis"] as const)("preserves %s through ordered shards", (kind) => {
-    const request = { kind, reqId: 1, inputs, baselineDps: runEngine(inputs).dps } as WorkerRequest
+    const synthetic = syntheticGraduationInputs()
+    const inventory = synthetic.inventory.slice(0, 2).map((piece) => ({ ...piece, relayed: true }))
+    const shardInputs = {
+      ...inputs,
+      inventory,
+      equipped: {
+        ...inputs.equipped,
+        ...Object.fromEntries(inventory.map((piece) => [piece.slot, piece.id])),
+      },
+    }
+    const request = {
+      kind,
+      reqId: 1,
+      inputs: shardInputs,
+      baselineDps: runEngine(shardInputs).dps,
+    } as WorkerRequest
     const compute = (req: WorkerRequest): WorkerResponse =>
       req.kind === "ranking"
         ? { kind: req.kind, ...computeRankingRequest(req) }
@@ -37,6 +53,7 @@ describe("pinned upstream adaptations", () => {
   })
 
   it("measures the simultaneous all-slot loss without adding interacting slot losses", () => {
+    const inputs = syntheticGraduationInputs()
     const empty = inputs.inventory
       .filter((p) => Object.values(inputs.equipped).includes(p.id))
       .reduce((state, piece) => applyPieceContribution(state, piece, -1), inputs)
