@@ -95,17 +95,14 @@ function optionsKey(options: unknown): string | null {
   return passKey(defaultInputs, options as EngineRunOptions)
 }
 
-describe("the per-request pass memo", { timeout: 300_000 }, () => {
-  it("answers every worker kind identically with and without the pass memo", () => {
-    const measured = importProfile(JSON.stringify(profileFile)).inputs
-    const umbra = { ...defaultInputs, classId: "bellstrikeUmbra" }
-    for (const inputs of [measured, umbra]) {
-      for (const [kind, job] of Object.entries(workerJobs(inputs))) {
-        const withoutMemo = job()
-        const withMemo = withPassMemo(job)
-        expect(withMemo, kind).toStrictEqual(withoutMemo)
-      }
-    }
+const measured = importProfile(JSON.stringify(profileFile)).inputs
+const parityCases = [measured, { ...defaultInputs, classId: "bellstrikeUmbra" }].flatMap((inputs) =>
+  Object.entries(workerJobs(inputs)).map(([kind, job]) => ({ classId: inputs.classId, kind, job })),
+)
+
+describe("the per-request pass memo", () => {
+  it.each(parityCases)("answers $classId / $kind identically with and without memo", ({ job }) => {
+    expect(withPassMemo(job)).toStrictEqual(job())
   })
 
   it("tells undefined, -0, NaN and Infinity apart from their JSON look-alikes in the pass key", () => {
