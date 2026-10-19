@@ -58,7 +58,7 @@ export function MultiSelect({ label, options, selected, onChange }: Props) {
         type="button"
         className="btn"
         role="combobox"
-        aria-label={label}
+        aria-label={count > 0 ? `${label} (${count})` : label}
         aria-controls={open ? listId : undefined}
         aria-activedescendant={open && options[highlight] ? `${listId}-${highlight}` : undefined}
         aria-haspopup="listbox"

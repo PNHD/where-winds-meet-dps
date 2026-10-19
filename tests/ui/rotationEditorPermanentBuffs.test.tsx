@@ -40,7 +40,7 @@ function renderPanel(inputs: Inputs, onChange: (next: Inputs) => void) {
 }
 
 function openBuffPicker(label = /^Permanent buffs/) {
-  fireEvent.click(screen.getByRole("button", { name: label }))
+  fireEvent.click(screen.getByRole("combobox", { name: label }))
 }
 
 describe("the Rotation Editor's permanent buff picker", () => {
@@ -88,7 +88,7 @@ describe("the Rotation Editor's permanent buff picker", () => {
     expect(screen.queryByRole("listbox")).toBeNull()
 
     openBuffPicker()
-    fireEvent.keyDown(screen.getByRole("button", { name: /^Permanent buffs/ }), { key: "Escape" })
+    fireEvent.keyDown(screen.getByRole("combobox", { name: /^Permanent buffs/ }), { key: "Escape" })
     expect(screen.queryByRole("listbox")).toBeNull()
   })
 })

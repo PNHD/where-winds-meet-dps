@@ -41,8 +41,7 @@ export function createGraduationGearPiece(options: GraduationGearPieceOptions): 
   }
 }
 
-// Keeps the word and attunement ids the class definition authored, and only
-// re-levels the base stats and their ceilings.
+// Only an explicit tier preview crossing T100 merges the legacy Mystic words.
 export function gearPieceAtGearLevel(piece: GearPiece, level: GearLevel): GearPiece {
   const attunement = getAttunement(piece.attunement)
   return {

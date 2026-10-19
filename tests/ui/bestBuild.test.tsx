@@ -317,3 +317,18 @@ describe("Best Build explicit preview and equip flow", () => {
     expect(screen.getAllByText(/already been used/).length).toBeGreaterThan(0)
   })
 })
+
+it("binds the configurable search budget to result ownership and cancels a stale budget", () => {
+  const view = render(panel(fixture(), vi.fn()))
+  fireEvent.click(screen.getByRole("combobox", { name: "Search budget" }))
+  fireEvent.mouseDown(screen.getByRole("option", { name: "Quick (256 builds)" }))
+  fireEvent.click(screen.getByRole("button", { name: "Find Best Build" }))
+  const quick = pending()
+  expect(quick.request.evaluationLimit).toBe(256)
+  fireEvent.click(screen.getByRole("combobox", { name: "Search budget" }))
+  fireEvent.mouseDown(screen.getByRole("option", { name: "Maximum (4,096 builds)" }))
+  expect(quick.worker.terminated).toBe(true)
+  answer(quick)
+  expect(screen.queryByRole("button", { name: "Equip Best Build" })).toBeNull()
+  view.unmount()
+})

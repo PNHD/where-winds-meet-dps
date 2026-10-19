@@ -748,7 +748,13 @@ export type WorkerRequest =
   | { kind: "graduationPlannerCancel"; reqId: number }
   | { kind: "statLab"; reqId: number; inputs: Inputs; sourceKey: string; changes: StatChange[] }
   | { kind: "statLabCancel"; reqId: number }
-  | { kind: "bestBuild"; reqId: number; inputs: Inputs; sourceKey: string }
+  | {
+      kind: "bestBuild"
+      reqId: number
+      inputs: Inputs
+      sourceKey: string
+      evaluationLimit?: number
+    }
   | { kind: "bestBuildCancel"; reqId: number }
   | ({ kind: "dpsDeltas" } & DpsWorkerRequest)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerRequest)
@@ -826,24 +832,25 @@ const handleWorkerMessage = (e: MessageEvent<WorkerRequest>) => {
     if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
   } else if (req.kind === "bestBuild") {
     activeBestBuildIds.add(req.reqId)
-    void findBestBuild(req.inputs, { cancelled: () => cancelledReqIds.has(req.reqId) }).then(
-      async (result) => {
-        if (result.status === "ok") {
-          const advice = await analyzeBestBuild(req.inputs, result, () =>
-            cancelledReqIds.has(req.reqId),
-          )
-          result = advice.status === "cancelled" ? { status: "cancelled" } : { ...result, advice }
-        }
-        activeBestBuildIds.delete(req.reqId)
-        cancelledReqIds.delete(req.reqId)
-        ;(self as unknown as Worker).postMessage({
-          kind: "bestBuild",
-          reqId: req.reqId,
-          sourceKey: req.sourceKey,
-          result,
-        })
-      },
-    )
+    void findBestBuild(req.inputs, {
+      cancelled: () => cancelledReqIds.has(req.reqId),
+      evaluationLimit: req.evaluationLimit,
+    }).then(async (result) => {
+      if (result.status === "ok") {
+        const advice = await analyzeBestBuild(req.inputs, result, () =>
+          cancelledReqIds.has(req.reqId),
+        )
+        result = advice.status === "cancelled" ? { status: "cancelled" } : { ...result, advice }
+      }
+      activeBestBuildIds.delete(req.reqId)
+      cancelledReqIds.delete(req.reqId)
+      ;(self as unknown as Worker).postMessage({
+        kind: "bestBuild",
+        reqId: req.reqId,
+        sourceKey: req.sourceKey,
+        result,
+      })
+    })
   } else if (req.kind === "dpsDeltas") {
     const res = computeDpsDeltas(req)
     ;(self as unknown as Worker).postMessage({ kind: "dpsDeltas", ...res })
