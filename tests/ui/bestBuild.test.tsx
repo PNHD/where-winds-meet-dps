@@ -15,10 +15,15 @@ import { BestBuildUpgradeAdvice } from "../../src/ui/features/gear/gear-tab/best
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
+    terminated: boolean
     posted: WorkerRequest[]
     onmessage: ((event: { data: WorkerResponse }) => void) | null
   }[] = []
   class MockWorker {
+    terminated = false
+    terminate() {
+      this.terminated = true
+    }
     posted: WorkerRequest[] = []
     onmessage: ((event: { data: WorkerResponse }) => void) | null = null
     constructor() {

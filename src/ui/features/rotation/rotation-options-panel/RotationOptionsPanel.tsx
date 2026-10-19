@@ -66,6 +66,10 @@ export function RotationOptionsPanel({
               (option.name ? t(rotationKey(option.id), option.name) : t("common.unnamed")) +
               (option.isClassDefault ? t("rotation.options.default") : ""),
             group: t(GROUP_KEYS[option.group]),
+            meta:
+              dpsByOptionId[option.id] === undefined
+                ? undefined
+                : `${Math.round(dpsByOptionId[option.id]).toLocaleString("en-US")} ${t("common.dps")}`,
           }))}
         />
       </div>

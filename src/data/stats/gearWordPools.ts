@@ -441,7 +441,11 @@ function poolFor(
   level: GearLevel,
   slot: GearSlot,
 ): readonly GearWordId[] {
-  return pools[level][gearWordSlotGroup(slot)]
+  const group = gearWordSlotGroup(slot)
+  const pool = pools[level][group]
+  return pools === RETUNE_POOLS && level >= 100 && group === "helmArmor"
+    ? [...pool, "allMysticBoost"]
+    : pool
 }
 
 export function gearWordPoolInitial(level: GearLevel, slot: GearSlot): readonly GearWordId[] {
@@ -468,4 +472,16 @@ export function gearWordPoolForLine(
 
 export function gearWordPool(level: GearLevel, slot: GearSlot): readonly GearWordId[] {
   return [...new Set([...gearWordPoolInitial(level, slot), ...gearWordPoolRetune(level, slot)])]
+}
+
+export function gearWordRelayedToLevel(
+  word: GearWordId,
+  from: GearLevel,
+  to: GearLevel,
+): GearWordId {
+  return from < 100 &&
+    to >= 100 &&
+    (word === "singleTargetMysticBoost" || word === "areaMysticBoost")
+    ? "allMysticBoost"
+    : word
 }

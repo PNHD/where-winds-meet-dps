@@ -80,11 +80,15 @@ function relayedDps(
   return dpsWithPiece(slotEmpty, maxRelayedClone(piece, inputs, breakthroughLevel))
 }
 
-export function computeGearAnalysis(inputs: Inputs, baselineDps: number): GearSlotAnalysisRow[] {
+export function computeGearAnalysis(
+  inputs: Inputs,
+  baselineDps: number,
+  slots: readonly GearSlot[] = GEAR_SLOTS,
+): GearSlotAnalysisRow[] {
   const pool = poolForClass(inputs.classId)
   const breakthroughLevel = gearLevelForBreakthrough(inputs.breakthrough)
 
-  return GEAR_SLOTS.map((slot) => {
+  return slots.map((slot) => {
     const piece = equippedPiece(inputs, slot)
     if (!piece) {
       return {
@@ -109,4 +113,13 @@ export function computeGearAnalysis(inputs: Inputs, baselineDps: number): GearSl
       unequipLoss: baselineDps - runEngine(slotEmpty).dps,
     }
   })
+}
+
+export function allSlotsUnequipLoss(inputs: Inputs, baselineDps: number): number {
+  const pieces = GEAR_SLOTS.map((slot) => equippedPiece(inputs, slot)).filter(
+    (piece): piece is GearPiece => piece !== null,
+  )
+  if (pieces.length === 0) return 0
+  const empty = pieces.reduce((inputs, piece) => applyPieceContribution(inputs, piece, -1), inputs)
+  return baselineDps - runEngine(empty).dps
 }

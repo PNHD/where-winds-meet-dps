@@ -137,6 +137,13 @@ function buildWordSpecs(inputs: Inputs, level: GearLevel): WordSpec<GearWordId>[
     wordSpec("areaMysticBoost", (x, roll) => {
       x.areaMysticBoost += roll
     }),
+    ...(level >= 100
+      ? [
+          wordSpec("allMysticBoost", (x, roll) => {
+            x.allMysticBoost += roll
+          }),
+        ]
+      : []),
     ...ATTRIBUTE_KEYS.flatMap((attribute) => [
       wordSpec(`min${attribute}`, (x, roll) => {
         applyAttrAttack(x, attribute, "min", roll)
@@ -249,13 +256,18 @@ export function computeRanking(
   inputs: Inputs,
   baseDps: number,
   statLineIds?: readonly string[],
+  block?: { index: number; count: number },
 ): ItemRankingRow[] {
   const rows: ItemRankingRow[] = []
-  for (const { source, specs } of rankingCatalogues(inputs)) {
-    for (const spec of specs) {
-      if (statLineIds && !statLineIds.includes(spec.word)) continue
-      rows.push(evaluateStatIncrement(inputs, baseDps, spec, source))
-    }
+  const catalogue = rankingCatalogues(inputs)
+    .flatMap(({ source, specs }) => specs.map((spec) => ({ source, spec })))
+    .filter(({ spec }) => !statLineIds || statLineIds.includes(spec.word))
+  const start = block ? Math.floor((catalogue.length * block.index) / block.count) : 0
+  const end = block
+    ? Math.floor((catalogue.length * (block.index + 1)) / block.count)
+    : catalogue.length
+  for (const { source, spec } of catalogue.slice(start, end)) {
+    rows.push(evaluateStatIncrement(inputs, baseDps, spec, source))
   }
   return withRankingLeads(rows)
 }

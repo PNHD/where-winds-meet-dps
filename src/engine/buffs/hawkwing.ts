@@ -23,6 +23,24 @@ export interface HawkwingStacksSchedule {
 
 const ZERO_HAWKWING_SCHEDULE: HawkwingStacksSchedule = { getExpectedStacksAtTime: () => 0 }
 
+interface MemoEntry {
+  p: number
+  rotationDurationSec: number
+  hitTimesSec: readonly number[]
+  schedule: HawkwingStacksSchedule
+}
+
+const MEMO_CAPACITY = 16
+const memoEntries: MemoEntry[] = []
+
+function sameHitTimes(left: readonly number[], right: readonly number[]): boolean {
+  if (left.length !== right.length) return false
+  for (let index = 0; index < left.length; index++) {
+    if (left[index] !== right[index]) return false
+  }
+  return true
+}
+
 export function hawkwingStacksSchedule(
   hitTimesSec: readonly number[],
   p: number,
@@ -31,6 +49,28 @@ export function hawkwingStacksSchedule(
 ): HawkwingStacksSchedule {
   if (hitTimesSec.length === 0 || rotationDurationSec <= 0 || p <= 0) return ZERO_HAWKWING_SCHEDULE
 
+  if (runRng) return simulateSchedule(hitTimesSec, p, rotationDurationSec, runRng)
+
+  const cached = memoEntries.find(
+    (entry) =>
+      entry.p === p &&
+      entry.rotationDurationSec === rotationDurationSec &&
+      sameHitTimes(entry.hitTimesSec, hitTimesSec),
+  )
+  if (cached) return cached.schedule
+
+  const schedule = simulateSchedule(hitTimesSec, p, rotationDurationSec)
+  memoEntries.push({ p, rotationDurationSec, hitTimesSec: [...hitTimesSec], schedule })
+  if (memoEntries.length > MEMO_CAPACITY) memoEntries.shift()
+  return schedule
+}
+
+function simulateSchedule(
+  hitTimesSec: readonly number[],
+  p: number,
+  rotationDurationSec: number,
+  runRng?: () => number,
+): HawkwingStacksSchedule {
   const steps = Math.ceil(rotationDurationSec / STEP_SEC) + 1
   const accum = new Float64Array(steps)
   const simRuns = runRng ? 1 : SIM_RUNS

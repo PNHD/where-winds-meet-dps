@@ -1,6 +1,7 @@
 import type { GearLevel, GearPiece, GearSlot, GearWordId } from "../../engine/types"
 import type { AttunementId } from "../../engine/attunements"
 import { attunementMax, getAttunement } from "../../engine/attunements"
+import { gearWordRelayedToLevel } from "../stats/gearWordPools"
 import { relayedCapValue } from "../../engine/gearStats"
 import { gearBaseStatsFor } from "../stats/gearBaseStats"
 import { GEAR_WORD_UNIT, gearWordMaxRoll } from "../stats/statLines"
@@ -49,7 +50,13 @@ export function gearPieceAtGearLevel(piece: GearPiece, level: GearLevel): GearPi
     level,
     ...gearBaseStatsFor({ slot: piece.slot, rarity: piece.rarity, level }),
     words: piece.words.map((entry) =>
-      entry.word ? { ...entry, value: gearWordMaxRoll(entry.word, level) } : entry,
+      entry.word
+        ? {
+            ...entry,
+            word: gearWordRelayedToLevel(entry.word, piece.level, level),
+            value: gearWordMaxRoll(gearWordRelayedToLevel(entry.word, piece.level, level), level),
+          }
+        : entry,
     ) as GearPiece["words"],
     attunementValue: attunement ? attunementMax(attunement, level) : 0,
   }

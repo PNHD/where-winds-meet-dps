@@ -5,10 +5,11 @@ import {
   type GraduationPlannerResult,
   type PlannerOptions,
 } from "./graduationPlanner"
+import { withPassMemo } from "./passMemo"
 import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone, relayedCapValue } from "./gearStats"
 import { computeRanking, getWordSpecs } from "./itemRanking"
-import { computeGearAnalysis, type GearSlotAnalysisRow } from "./gearAnalysis"
+import { allSlotsUnequipLoss, computeGearAnalysis, type GearSlotAnalysisRow } from "./gearAnalysis"
 import { probLinearImprove } from "./retunement"
 import {
   computeRetunement,
@@ -377,6 +378,7 @@ function computeWordMax(req: WordMaxWorkerRequest): WordMaxWorkerResponse {
 }
 
 export interface RankingWorkerRequest {
+  block?: { index: number; count: number }
   reqId: number
   inputs: Inputs
   baselineDps: number
@@ -388,10 +390,15 @@ export interface RankingWorkerResponse {
 }
 
 function computeRankingRequest(req: RankingWorkerRequest): RankingWorkerResponse {
-  return { reqId: req.reqId, rows: computeRanking(req.inputs, req.baselineDps) }
+  return {
+    reqId: req.reqId,
+    rows: computeRanking(req.inputs, req.baselineDps, undefined, req.block),
+  }
 }
 
 export interface GearAnalysisWorkerRequest {
+  slots?: readonly GearSlot[]
+  includeAllSlotsLoss?: boolean
   reqId: number
   inputs: Inputs
   baselineDps: number
@@ -400,10 +407,16 @@ export interface GearAnalysisWorkerRequest {
 export interface GearAnalysisWorkerResponse {
   reqId: number
   rows: GearSlotAnalysisRow[]
+  allSlotsLoss: number
 }
 
 function computeGearAnalysisRequest(req: GearAnalysisWorkerRequest): GearAnalysisWorkerResponse {
-  return { reqId: req.reqId, rows: computeGearAnalysis(req.inputs, req.baselineDps) }
+  return {
+    reqId: req.reqId,
+    rows: computeGearAnalysis(req.inputs, req.baselineDps, req.slots),
+    allSlotsLoss:
+      !req.slots || req.includeAllSlotsLoss ? allSlotsUnequipLoss(req.inputs, req.baselineDps) : 0,
+  }
 }
 
 export interface SetTilesWorkerRequest {
@@ -888,7 +901,7 @@ const handleWorkerMessage = (e: MessageEvent<WorkerRequest>) => {
 }
 
 if (typeof self !== "undefined" && typeof document === "undefined") {
-  self.onmessage = handleWorkerMessage
+  self.onmessage = (event) => withPassMemo(() => handleWorkerMessage(event))
 }
 
 export {

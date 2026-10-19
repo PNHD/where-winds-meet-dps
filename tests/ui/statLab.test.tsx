@@ -14,10 +14,15 @@ import { applyArmorSet, applyBowSet } from "../../src/engine/panel"
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
+    terminated: boolean
     posted: WorkerRequest[]
     onmessage: ((event: { data: WorkerResponse }) => void) | null
   }[] = []
   class MockWorker {
+    terminated = false
+    terminate() {
+      this.terminated = true
+    }
     posted: WorkerRequest[] = []
     onmessage: ((event: { data: WorkerResponse }) => void) | null = null
     constructor() {
@@ -276,22 +281,14 @@ describe("Stat Lab worker ownership and preview", () => {
     flush()
     const old = pending()
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-    expect(
-      old.worker.posted.some(
-        (request) => request.kind === "statLabCancel" && request.reqId === old.request.reqId,
-      ),
-    ).toBe(true)
+    expect(old.worker.terminated).toBe(true)
     answer(old)
     expect(screen.queryByText("110")).toBeNull()
     fireEvent.click(screen.getByRole("button", { name: "Recalculate" }))
     flush()
     const next = pending()
     view.unmount()
-    expect(
-      next.worker.posted.some(
-        (request) => request.kind === "statLabCancel" && request.reqId === next.request.reqId,
-      ),
-    ).toBe(true)
+    expect(next.worker.terminated).toBe(true)
   })
 
   it("reports evaluator errors and unavailable percentage on a zero baseline", () => {

@@ -11,10 +11,15 @@ import { planGraduation } from "../../src/engine/graduationPlanner"
 
 const { workers, MockWorker } = vi.hoisted(() => {
   const workers: {
+    terminated: boolean
     posted: WorkerRequest[]
     onmessage: ((event: { data: WorkerResponse }) => void) | null
   }[] = []
   class MockWorker {
+    terminated = false
+    terminate() {
+      this.terminated = true
+    }
     posted: WorkerRequest[] = []
     onmessage: ((event: { data: WorkerResponse }) => void) | null = null
     constructor() {
@@ -182,11 +187,7 @@ describe("graduation preview UI", () => {
     view.unmount()
     answer(abandoned)
     expect(retainedResponse("graduationPlanner")).toBeNull()
-    expect(
-      workers
-        .flatMap((worker) => worker.posted)
-        .filter((request) => request.kind === "graduationPlannerCancel").length,
-    ).toBeGreaterThanOrEqual(3)
+    expect(workers.filter((worker) => worker.terminated).length).toBeGreaterThanOrEqual(3)
     expect(storage).not.toHaveBeenCalled()
     storage.mockRestore()
   })

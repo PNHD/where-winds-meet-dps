@@ -41,6 +41,9 @@ const MYSTIC_BOOST_CEILING: GearLevelValues = {
   105: 0.134,
 }
 
+// In-game values as of 2026-10-15.
+const ALL_MYSTIC_BOOST_CEILING: GearLevelValues = { 100: 0.114, 105: 0.134 }
+
 export const STAT_LINES = [
   { id: "power", label: "Power", unit: "raw", maxRoll: ATTRIBUTE_CEILING },
   { id: "agility", label: "Agility", unit: "raw", maxRoll: ATTRIBUTE_CEILING },
@@ -260,6 +263,15 @@ export const STAT_LINES = [
     unit: "percent",
     enginePath: "areaMysticBoost",
     maxRoll: MYSTIC_BOOST_CEILING,
+    scope: "player",
+    category: "Target-Type Boosts",
+  },
+  {
+    id: "allMysticBoost",
+    label: "All Mystic Skill DMG Boost",
+    unit: "percent",
+    enginePath: "allMysticBoost",
+    maxRoll: ALL_MYSTIC_BOOST_CEILING,
     scope: "player",
     category: "Target-Type Boosts",
   },
