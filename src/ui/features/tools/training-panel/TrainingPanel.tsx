@@ -4,7 +4,12 @@ import { activeRotationForInputs } from "../../../../engine/dps"
 import { classDefinition } from "../../../../definitions/classes/registry"
 import { useI18n } from "../../../../i18n/i18nContext"
 import { TextInput } from "../../../components/text-input/TextInput"
-import { JOURNAL_LIMIT, localCalendarDate, type JournalEntry } from "../toolkitJournal"
+import {
+  JOURNAL_LIMIT,
+  downloadJson,
+  localCalendarDate,
+  type JournalEntry,
+} from "../toolkitJournal"
 import styles from "../tools-tab/ToolsTab.module.scss"
 
 export interface TrainingContext {
@@ -34,6 +39,7 @@ export function TrainingPanel({
   const [date, setDate] = useState(localCalendarDate)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
+  const [contextExport, setContextExport] = useState<string | null>(null)
   const rotation = activeRotationForInputs(inputs)
   const classDef = classDefinition(inputs.classId)
 
@@ -43,35 +49,32 @@ export function TrainingPanel({
     setSaving(true)
     setError(false)
     try {
-      const bytes = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(JSON.stringify(inputs)),
-      )
+      const inputsJson = JSON.stringify(inputs)
+      const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(inputsJson))
       const fingerprint = Array.from(new Uint8Array(bytes), (byte) =>
         byte.toString(16).padStart(2, "0"),
       ).join("")
-      const saved = await onSave([
-        ...entries,
-        {
-          id: crypto.randomUUID(),
-          kind: "training",
-          name: name.trim(),
-          date,
-          classId: inputs.classId,
-          profileId,
-          rotationId: rotation.id,
-          fingerprint,
-          patch: patch.trim(),
-          target: target.trim(),
-          damage: Number(damage),
-          duration: Number(duration),
-          modeledDps: result.dps,
-          modeledDuration: result.rotationDuration,
-          source: source.trim(),
-          note,
-        },
-      ])
+      const observation: Extract<JournalEntry, { kind: "training" }> = {
+        id: crypto.randomUUID(),
+        kind: "training",
+        name: name.trim(),
+        date,
+        classId: inputs.classId,
+        profileId,
+        rotationId: rotation.id,
+        fingerprint,
+        patch: patch.trim(),
+        target: target.trim(),
+        damage: Number(damage),
+        duration: Number(duration),
+        modeledDps: result.dps,
+        modeledDuration: result.rotationDuration,
+        source: source.trim(),
+        note,
+      }
+      const saved = await onSave([...entries, observation])
       if (saved) {
+        setContextExport(JSON.stringify({ v: 1, observation, inputsJson }, null, 2))
         setName("")
         setDamage("")
         setDuration("")
@@ -182,6 +185,15 @@ export function TrainingPanel({
         </fieldset>
       </form>
       {error && <p role="alert">{t("tools.storageFailed")}</p>}
+      {contextExport && (
+        <button
+          type="button"
+          className="btn"
+          onClick={() => downloadJson(contextExport, "wwm-recorded-model-context.json")}
+        >
+          {t("training.downloadContext")}
+        </button>
+      )}
       <p>{t("training.backup")}</p>
     </section>
   )

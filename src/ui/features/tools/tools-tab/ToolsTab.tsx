@@ -11,6 +11,7 @@ import {
   MATCH_MODES,
   TOOLKIT_KEY,
   journalText,
+  downloadJson,
   localCalendarDate,
   parseJournal,
   remainingSeconds,
@@ -82,15 +83,6 @@ function readJournal() {
   } catch {
     return { raw, entries: null, error: "tools.loadFailed" }
   }
-}
-
-function download(text: string, name: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }))
-  const anchor = document.createElement("a")
-  anchor.href = url
-  anchor.download = name
-  anchor.click()
-  URL.revokeObjectURL(url)
 }
 
 export function ToolsTab({
@@ -240,7 +232,7 @@ export function ToolsTab({
             className="btn"
             disabled={journal.raw === null && !entries}
             onClick={() =>
-              download(journal.raw ?? journalText(entries ?? []), "wwm-personal-tools.json")
+              downloadJson(journal.raw ?? journalText(entries ?? []), "wwm-personal-tools.json")
             }
           >
             {t("tools.backup")}
@@ -288,7 +280,7 @@ export function ToolsTab({
               className="btn"
               onClick={async () => {
                 importGeneration.current++
-                download(
+                downloadJson(
                   journal.raw ?? journalText(entries ?? []),
                   "wwm-personal-tools-before-restore.json",
                 )

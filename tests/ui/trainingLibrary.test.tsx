@@ -17,6 +17,8 @@ import {
 import { installTestLocks } from "./toolkitTestLocks"
 import type { Result, GearPiece } from "../../src/engine/types"
 import { SharedInventory } from "../../src/ui/features/tools/library-tab/SharedInventory"
+import * as journal from "../../src/ui/features/tools/toolkitJournal"
+import { makeBuff } from "../../src/engine/buff"
 
 const observation: Extract<JournalEntry, { kind: "training" }> = {
   id: "measurement",
@@ -86,8 +88,11 @@ it("rejects invalid observations without coercing or publishing evidence", () =>
 })
 
 it("captures the selected model context and keeps observed numbers separate without modifying inputs", async () => {
-  const inputs = structuredClone(defaultInputs),
-    original = structuredClone(inputs)
+  const inputs = structuredClone(defaultInputs)
+  inputs.critRate += 0.01
+  inputs.customBuffs = [makeBuff(inputs.classId, { name: "Private custom content" })]
+  const original = structuredClone(inputs)
+  const download = vi.spyOn(journal, "downloadJson").mockImplementation(() => {})
   const save = vi.fn(async (records: JournalEntry[]) => {
     parseJournal(journalText(records))
     return true
@@ -128,6 +133,18 @@ it("captures the selected model context and keeps observed numbers separate with
   expect(inputs).toEqual(original)
   expect(localStorage.getItem(TOOLKIT_KEY)).toBeNull()
   expect(localStorage.getItem("wwm.profiles")).toBeNull()
+  fireEvent.click(screen.getByRole("button", { name: "Download last recorded model context" }))
+  const downloaded = JSON.parse(download.mock.calls[0][0])
+  expect(downloaded.observation).toEqual(captured)
+  expect(downloaded.inputsJson).toBe(JSON.stringify(original))
+  const digest = await webcrypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(downloaded.inputsJson),
+  )
+  expect(Buffer.from(digest).toString("hex")).toBe(
+    captured.kind === "training" && captured.fingerprint,
+  )
+  download.mockRestore()
 })
 
 it("filters references and retains the selected class, rotation and inventory", () => {

@@ -180,6 +180,18 @@ export function journalText(entries: JournalEntry[]): string {
   return JSON.stringify({ v: 1, entries }, null, 2)
 }
 
+export function downloadJson(text: string, name: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }))
+  try {
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = name
+    anchor.click()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export async function writeJournal(
   entries: JournalEntry[],
   expectedRaw: string | null,
