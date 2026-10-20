@@ -428,6 +428,7 @@ function AppInner() {
                 <ToolsTab
                   context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
                   view="training"
+                  key="training"
                 />
               }
             />
@@ -448,6 +449,7 @@ function AppInner() {
                 <ToolsTab
                   context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
                   view="arena"
+                  key="arena"
                 />
               }
             />
