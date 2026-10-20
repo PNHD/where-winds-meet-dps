@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { defaultInputs } from "../../src/engine/defaults"
 import type { Inputs } from "../../src/engine/types"
+import { GearTab } from "../../src/ui/features/gear/gear-tab/GearTab"
+import { ConfirmProvider } from "../../src/ui/components/confirm-dialog/ConfirmDialog"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { NewGearPieceDialog } from "../../src/ui/features/gear/new-gear-piece-dialog/NewGearPieceDialog"
 
@@ -18,7 +20,10 @@ Physical Penetration +10.7
 
 vi.mock("../../src/ui/features/gear/screenshot-ocr/ocrEngine", () => ({
   decodeGearScreenshot: vi.fn(async () => ({ width: 10, height: 10 }) as unknown as ImageBitmap),
-  preprocessGearScreenshot: vi.fn(() => document.createElement("canvas")),
+  preprocessGearScreenshot: vi.fn(() => ({
+    panel: document.createElement("canvas"),
+    headerBar: null,
+  })),
   recognizeGearScreenshot: vi.fn(async () => TRANSCRIPT_A),
   terminateOcrWorker: vi.fn(async () => {}),
 }))
@@ -53,9 +58,7 @@ function addScreenshot(): void {
 }
 
 describe("NewGearPieceDialog screenshot import", () => {
-  it("has no separate screenshot dialog entry point left in the gear tab", async () => {
-    const { GearTab } = await import("../../src/ui/features/gear/gear-tab/GearTab")
-    const { ConfirmProvider } = await import("../../src/ui/components/confirm-dialog/ConfirmDialog")
+  it("has no separate screenshot dialog entry point left in the gear tab", () => {
     render(
       <I18nProvider>
         <ConfirmProvider>
@@ -98,6 +101,32 @@ describe("NewGearPieceDialog screenshot import", () => {
     expect(mode).toBe("equip")
     expect(piece.label).toBe("Mirage Sentinel")
     expect(piece.words[0]).toMatchObject({ word: "maxPhys", value: 73.1 })
+  })
+
+  it("takes the saved level from the header-bar recognition", async () => {
+    const { preprocessGearScreenshot, recognizeGearScreenshot } =
+      await import("../../src/ui/features/gear/screenshot-ocr/ocrEngine")
+    vi.mocked(preprocessGearScreenshot).mockReturnValueOnce({
+      panel: document.createElement("canvas"),
+      headerBar: document.createElement("canvas"),
+    })
+    vi.mocked(recognizeGearScreenshot)
+      .mockResolvedValueOnce(
+        `
+Mirage Sentinel
+Max Physical Attack +73.1
+Momentum +45.9
+`,
+      )
+      .mockResolvedValueOnce("Tier 100")
+    const { onSave } = renderDialog()
+
+    addScreenshot()
+    await screen.findAllByDisplayValue("Max Physical Attack")
+    fireEvent.click(screen.getByRole("button", { name: "Save & Equip" }))
+
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(onSave.mock.calls[0]![0].level).toBe(100)
   })
 
   it("still saves a blank hand-typed draft when no screenshot was ever added", () => {

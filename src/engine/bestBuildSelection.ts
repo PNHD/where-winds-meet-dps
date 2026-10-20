@@ -4,6 +4,18 @@ import { GEAR_LEVELS, GEAR_RARITIES, GEAR_SLOTS } from "./types"
 import type { EquippedSlots, GearPiece, Inputs } from "./types"
 import type { BestBuildAdvice } from "./bestBuildAdvisor"
 
+export const BEST_BUILD_LIMITS = {
+  exact: 1024,
+  evaluations: 4096,
+  beam: 16,
+  rounds: 8,
+  yieldEvery: 16,
+  farmConceptsPerSlot: 16,
+  plannerPieces: 4096,
+  plannerEvaluations: 1024,
+  routeEvaluations: 512,
+} as const
+
 export type BestBuildError =
   "missing-slots" | "duplicate-id" | "invalid-equipped" | "no-rotation" | "engine-error"
 export type BestBuildResult =

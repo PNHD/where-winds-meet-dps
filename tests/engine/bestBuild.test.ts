@@ -44,6 +44,19 @@ const additive = (inputs: Inputs) =>
   GEAR_SLOTS.reduce((sum, slot) => sum + Number(inputs.equipped[slot]?.split("-").at(-1) ?? 0), 0)
 
 describe("complete-build optimizer", () => {
+  it("honors an explicit ceiling below the exact enumeration threshold", async () => {
+    expect(await findBestBuild(fixture(2), { score: additive, evaluationLimit: 32 })).toMatchObject(
+      { status: "ok", approximate: true, evaluated: 32 },
+    )
+  })
+  it("honors a caller's bounded evaluation ceiling without changing the default search", async () => {
+    const inputs = fixture(4)
+    const result = await findBestBuild(inputs, { score: additive, evaluationLimit: 32 })
+    expect(result).toMatchObject({ status: "ok", approximate: true, evaluated: 32 })
+    expect(await findBestBuild(inputs, { score: additive, evaluationLimit: 0 })).toMatchObject({
+      status: "error",
+    })
+  })
   it("finds the known exact global optimum and maps every equipped slot", async () => {
     const inputs = fixture()
     const result = await findBestBuild(inputs, { score: additive })

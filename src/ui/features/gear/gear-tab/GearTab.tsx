@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { lazy, Suspense, useMemo, useState } from "react"
 import { BestBuildPanel } from "./BestBuildPanel"
 import type { EquippedSlots, GearPiece, GearSlot, Inputs } from "../../../../engine/types"
 import { GEAR_SLOTS } from "../../../../engine/types"
@@ -26,6 +26,17 @@ import { useWordMaxAnalysis } from "../../../hooks/useWordMaxAnalysis"
 import type { CustomGraduationBuild } from "../../../../engine/customGraduationBuild"
 import type { HeirloomProfile } from "../../../../engine/heirloom"
 import styles from "./GearTab.module.scss"
+
+const GlobalStatBudgetPanel = lazy(() =>
+  import("../global-stat-budget-panel/GlobalStatBudgetPanel").then((module) => ({
+    default: module.GlobalStatBudgetPanel,
+  })),
+)
+const GraduationPlannerPanel = lazy(() =>
+  import("../graduation-planner-panel/GraduationPlannerPanel").then((module) => ({
+    default: module.GraduationPlannerPanel,
+  })),
+)
 
 interface Props {
   optimizerInputs?: Inputs
@@ -76,7 +87,20 @@ export function GearTab({
   const isEquipped = !!selectedPiece && equipped[selectedPiece.slot] === selectedPiece.id
 
   const equippedDeltas = useEquippedDpsDeltas(engineInputs, currentDps)
-  const inventoryDeltas = useDpsDeltas(engineInputs, currentDps)
+  const candidateIds = useMemo(
+    () =>
+      inventory
+        .filter(
+          (piece) =>
+            equipped[piece.slot] !== piece.id &&
+            (sub === "inventory"
+              ? !selectedSlot || piece.slot === selectedSlot
+              : piece.id === selectedPieceId),
+        )
+        .map((piece) => piece.id),
+    [inventory, equipped, sub, selectedSlot, selectedPieceId],
+  )
+  const inventoryDeltas = useDpsDeltas(engineInputs, currentDps, candidateIds)
   const selectedDelta = selectedPiece
     ? (inventoryDeltas.deltas[selectedPiece.id] ?? equippedDeltas.deltas[selectedPiece.id])
     : undefined
@@ -199,7 +223,7 @@ export function GearTab({
   return (
     <>
       <div className="panel">
-        <div className="panel-head">
+        <div className="panel-head toolbar">
           <h2>{t("gear.equipped")}</h2>
           <button type="button" className="btn primary" onClick={() => setImportOpen(true)}>
             {t("gear.importGear")}
@@ -228,6 +252,10 @@ export function GearTab({
         />
       </div>
 
+      <Suspense fallback={null}>
+        <GlobalStatBudgetPanel inputs={optimizerInputs ?? engineInputs} />
+        <GraduationPlannerPanel inputs={optimizerInputs ?? engineInputs} profileId={profileId} />
+      </Suspense>
       <div className={styles.gearSplit}>
         <div className={styles.gearColumn}>
           <GearDetailsPanel

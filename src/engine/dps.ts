@@ -1,4 +1,5 @@
 import type { EngineRunOptions, Inputs, Result } from "./types"
+import { rememberedPass } from "./passMemo"
 import type { Rotation } from "./rotation"
 import { simulateTimeline } from "./timeline"
 import { defaultRotationForClass, builtinRotationsForClass } from "./builtinLibrary"
@@ -16,6 +17,10 @@ export function activeRotationForInputs(inputs: Inputs): Rotation | null {
 }
 
 export function runEngine(inputs: Inputs, options?: EngineRunOptions): Result {
+  return rememberedPass(inputs, options, () => computePass(inputs, options))
+}
+
+function computePass(inputs: Inputs, options?: EngineRunOptions): Result {
   const rotation = activeRotationForInputs(inputs)
   if (!rotation) {
     return {

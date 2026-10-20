@@ -22,7 +22,9 @@ const PROGRESS_OWNER_KIND: Partial<Record<ResponseKind, RequestKind>> = {
   parseSimulationProgress: "parseSimulation",
 }
 const CANCEL_KIND_BY_KIND: Partial<Record<RequestKind, RequestKind>> = {
+  graduationPlanner: "graduationPlannerCancel",
   bestBuild: "bestBuildCancel",
+  statLab: "statLabCancel",
   parseSimulation: "parseSimulationCancel",
 }
 const SELF_REPORTING_KINDS = new Set<RequestKind>(Object.values(PROGRESS_OWNER_KIND))
@@ -36,6 +38,12 @@ export interface DpsWorkerActivity {
 interface ShardCollector {
   remaining: number
   parts: WorkerResponse[]
+}
+
+interface DispatchUnit {
+  request: WorkerRequest
+  kind: RequestKind
+  ownerReqId: number
 }
 
 interface KindState {
@@ -56,9 +64,10 @@ interface KindState {
 
 const stateByKind = new Map<RequestKind, KindState>()
 const pool: Worker[] = []
-const inFlightByWorker = new Map<Worker, number>()
+const waitingUnits: DispatchUnit[] = []
+const runningUnitByWorker = new Map<Worker, DispatchUnit>()
 const workerByReqId = new Map<number, Worker>()
-const ownerReqIdByShardReqId = new Map<number, number>()
+const ownerReqIdByShardReqId = new Map<number, { ownerReqId: number; shardPosition: number }>()
 const collectorByReqId = new Map<number, ShardCollector>()
 const activityListeners = new Set<() => void>()
 let activity: DpsWorkerActivity = { kinds: [], done: 0, total: 0 }
@@ -91,36 +100,72 @@ function poolSize(): number {
   return Math.max(1, Math.min(MAX_POOL_SIZE, cores - 1))
 }
 
-function inFlightOn(worker: Worker): number {
-  return inFlightByWorker.get(worker) ?? 0
-}
-
-function freestWorker(): Worker {
-  const idle = pool.find((worker) => inFlightOn(worker) === 0)
-  if (idle) return idle
-  if (pool.length < poolSize()) {
-    const worker = new DpsWorker()
-    worker.onmessage = (event: MessageEvent<WorkerResponse>) => receive(event.data)
-    pool.push(worker)
-    return worker
+function spawnWorker(): Worker {
+  const worker = new DpsWorker()
+  worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    if (pool.includes(worker)) receive(event.data)
   }
-  return pool.reduce((freest, worker) =>
-    inFlightOn(worker) < inFlightOn(freest) ? worker : freest,
-  )
-}
-
-function claimWorker(reqId: number): Worker {
-  const worker = freestWorker()
-  workerByReqId.set(reqId, worker)
-  inFlightByWorker.set(worker, inFlightOn(worker) + 1)
+  pool.push(worker)
   return worker
 }
 
-function releaseWorker(reqId: number): void {
+function idleWorker(): Worker | null {
+  const idle = pool.find((worker) => !runningUnitByWorker.has(worker))
+  if (idle) return idle
+  return pool.length < poolSize() ? spawnWorker() : null
+}
+
+function dispatchWaiting(): void {
+  while (waitingUnits.length > 0) {
+    const worker = idleWorker()
+    if (!worker) return
+    const unit = waitingUnits.shift() as DispatchUnit
+    runningUnitByWorker.set(worker, unit)
+    workerByReqId.set(unit.request.reqId, worker)
+    worker.postMessage(unit.request)
+  }
+}
+
+function finishUnit(reqId: number): void {
+  const worker = workerByReqId.get(reqId)
+  if (worker) {
+    workerByReqId.delete(reqId)
+    runningUnitByWorker.delete(worker)
+  }
+  dispatchWaiting()
+}
+
+function terminateUnit(reqId: number): void {
   const worker = workerByReqId.get(reqId)
   if (!worker) return
   workerByReqId.delete(reqId)
-  inFlightByWorker.set(worker, Math.max(0, inFlightOn(worker) - 1))
+  runningUnitByWorker.delete(worker)
+  worker.onmessage = null
+  worker.terminate()
+  pool.splice(pool.indexOf(worker), 1)
+  dispatchWaiting()
+}
+
+function stopRunsOf(kind: RequestKind, state: KindState, keptOwnerReqId: number | null): void {
+  const stoppedOwners = new Set<number>()
+  for (let at = waitingUnits.length - 1; at >= 0; at--) {
+    const unit = waitingUnits[at]
+    if (unit.kind !== kind || unit.ownerReqId === keptOwnerReqId) continue
+    waitingUnits.splice(at, 1)
+    stoppedOwners.add(unit.ownerReqId)
+  }
+  for (const unit of [...runningUnitByWorker.values()]) {
+    if (unit.kind !== kind || unit.ownerReqId === keptOwnerReqId) continue
+    stoppedOwners.add(unit.ownerReqId)
+    terminateUnit(unit.request.reqId)
+  }
+  for (const ownerReqId of stoppedOwners) {
+    state.signatureByInFlightReqId.delete(ownerReqId)
+    collectorByReqId.delete(ownerReqId)
+    for (const [shardReqId, shard] of ownerReqIdByShardReqId) {
+      if (shard.ownerReqId === ownerReqId) ownerReqIdByShardReqId.delete(shardReqId)
+    }
+  }
 }
 
 function setPending(state: KindState, isPending: boolean): void {
@@ -162,7 +207,7 @@ function deliverProgress(kind: RequestKind, progress: ProgressResponse): void {
 function deliver(response: WorkerResponse): void {
   const kind = response.kind as RequestKind
   const state = stateFor(kind)
-  releaseWorker(response.reqId)
+  finishUnit(response.reqId)
   const signature = state.signatureByInFlightReqId.get(response.reqId)
   if (signature !== undefined) {
     state.signatureByInFlightReqId.delete(response.reqId)
@@ -217,27 +262,33 @@ function sendQueued(state: KindState): void {
   if (signature !== null) state.signatureByInFlightReqId.set(request.reqId, signature)
   const shards = shardRequest(request, poolSize())
   if (!shards) {
-    claimWorker(request.reqId).postMessage(request)
+    waitingUnits.push({ request, kind: request.kind, ownerReqId: request.reqId })
+    dispatchWaiting()
     return
   }
   const collector: ShardCollector = { remaining: shards.length, parts: [] }
   collectorByReqId.set(request.reqId, collector)
-  for (const shard of shards) {
+  shards.forEach((shard, shardPosition) => {
     const shardReqId = ++lastAssignedReqId
-    ownerReqIdByShardReqId.set(shardReqId, request.reqId)
-    const sent = { ...shard, reqId: shardReqId } as WorkerRequest
-    claimWorker(shardReqId).postMessage(sent)
-  }
+    ownerReqIdByShardReqId.set(shardReqId, { ownerReqId: request.reqId, shardPosition })
+    waitingUnits.push({
+      request: { ...shard, reqId: shardReqId } as WorkerRequest,
+      kind: request.kind,
+      ownerReqId: request.reqId,
+    })
+  })
+  dispatchWaiting()
 }
 
 function collectShard(response: WorkerResponse): boolean {
-  const ownerReqId = ownerReqIdByShardReqId.get(response.reqId)
-  if (ownerReqId === undefined) return false
+  const shard = ownerReqIdByShardReqId.get(response.reqId)
+  if (shard === undefined) return false
+  const { ownerReqId, shardPosition } = shard
   ownerReqIdByShardReqId.delete(response.reqId)
-  releaseWorker(response.reqId)
+  finishUnit(response.reqId)
   const collector = collectorByReqId.get(ownerReqId)
   if (!collector) return true
-  collector.parts.push(response)
+  collector.parts[shardPosition] = response
   collector.remaining--
   if (collector.remaining > 0) return true
   collectorByReqId.delete(ownerReqId)
@@ -246,11 +297,11 @@ function collectShard(response: WorkerResponse): boolean {
 }
 
 function abandonRequests(kind: RequestKind, state: KindState): void {
-  postCancel(kind, state)
+  stopRunsOf(kind, state, null)
   dropQueued(state)
   state.awaitedReqId = null
   state.lastDeliveredReqId = state.latestReqId
-  if (kind === "bestBuild") {
+  if (kind === "bestBuild" || kind === "graduationPlanner" || kind === "statLab") {
     state.retained = null
     state.retainedReqId = state.latestReqId
   }
@@ -260,7 +311,6 @@ function abandonRequests(kind: RequestKind, state: KindState): void {
 export function postToDpsWorker(unsent: UnsentRequest): void {
   const request = { ...unsent, reqId: ++lastAssignedReqId } as WorkerRequest
   const state = stateFor(request.kind)
-  postCancel(request.kind, state)
   dropQueued(state)
   state.latestReqId = request.reqId
   state.awaitedReqId = null
@@ -269,18 +319,21 @@ export function postToDpsWorker(unsent: UnsentRequest): void {
   if (signature !== null) {
     const cached = cachedResponse(request.kind, signature)
     if (cached) {
+      stopRunsOf(request.kind, state, null)
       const replay = { ...cached, reqId: request.reqId } as WorkerResponse
       queueMicrotask(() => deliver(replay))
       return
     }
     const alreadyComputing = reqIdAlreadyComputing(state, signature)
     if (alreadyComputing !== null) {
+      stopRunsOf(request.kind, state, alreadyComputing)
       state.awaitedReqId = alreadyComputing
       setPending(state, true)
       return
     }
   }
 
+  stopRunsOf(request.kind, state, null)
   state.queued = request
   state.queuedSignature = signature
   setPending(state, true)
@@ -297,7 +350,7 @@ export function postToDpsWorker(unsent: UnsentRequest): void {
 
 export function cancelDpsWorkerRequest(kind: RequestKind): void {
   const state = stateFor(kind)
-  if (kind === "bestBuild") {
+  if (kind === "bestBuild" || kind === "graduationPlanner" || kind === "statLab") {
     abandonRequests(kind, state)
     return
   }

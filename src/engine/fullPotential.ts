@@ -73,13 +73,19 @@ function applyBestAttunement(
   return bestPiece
 }
 
-export function getFTPiece(piece: GearPiece, inputs: Inputs): GearPiece {
+function fullPotentialPiece(
+  piece: GearPiece,
+  inputs: Inputs,
+): { piece: GearPiece; level: GearLevel } {
   const baseline = slotEmptyBaseline(piece.slot, inputs)
   const breakthroughLevel = gearLevelForBreakthrough(inputs.breakthrough)
 
   if (piece.relayed) {
     const relayedClone = maxRelayedClone(piece, inputs, breakthroughLevel)
-    return applyBestAttunement(relayedClone, inputs, baseline, breakthroughLevel)
+    return {
+      piece: applyBestAttunement(relayedClone, inputs, baseline, breakthroughLevel),
+      level: breakthroughLevel,
+    }
   }
 
   const retuned = bestRetunedVariant(piece, inputs, baseline, piece.level)
@@ -93,18 +99,30 @@ export function getFTPiece(piece: GearPiece, inputs: Inputs): GearPiece {
   const relayedDps = runEngine(applyPieceContribution(baseline, relayed, +1)).dps
   const relayWins = relayedDps > retunedDps
 
-  return applyBestAttunement(
-    relayWins ? relayed : retuned,
-    inputs,
-    baseline,
-    relayWins ? breakthroughLevel : piece.level,
-  )
+  const level = relayWins ? breakthroughLevel : piece.level
+  return {
+    piece: applyBestAttunement(relayWins ? relayed : retuned, inputs, baseline, level),
+    level,
+  }
+}
+
+export function getFTPiece(piece: GearPiece, inputs: Inputs): GearPiece {
+  return fullPotentialPiece(piece, inputs).piece
+}
+
+export interface FullPotentialDps {
+  dps: number
+  level: GearLevel
+}
+
+export function ftEvaluationWhenEquipped(piece: GearPiece, inputs: Inputs): FullPotentialDps {
+  const baseline = slotEmptyBaseline(piece.slot, inputs)
+  const ft = fullPotentialPiece(piece, inputs)
+  return { dps: runEngine(applyPieceContribution(baseline, ft.piece, +1)).dps, level: ft.level }
 }
 
 export function ftDpsWhenEquipped(piece: GearPiece, inputs: Inputs): number {
-  const baseline = slotEmptyBaseline(piece.slot, inputs)
-  const ft = getFTPiece(piece, inputs)
-  return runEngine(applyPieceContribution(baseline, ft, +1)).dps
+  return ftEvaluationWhenEquipped(piece, inputs).dps
 }
 
 export function ftDpsWithSlotEmpty(slot: GearSlot, inputs: Inputs): number {

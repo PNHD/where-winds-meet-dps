@@ -35,7 +35,7 @@ const ANALYSIS_ROWS: GearSlotAnalysisRow[] = [
 ]
 
 vi.mock("../../src/ui/hooks/useGearAnalysis", () => ({
-  useGearAnalysis: () => ({ rows: ANALYSIS_ROWS, isPending: false }),
+  useGearAnalysis: () => ({ rows: ANALYSIS_ROWS, allSlotsLoss: 3500, isPending: false }),
 }))
 
 function piece(id: string, slot: GearPiece["slot"]): GearPiece {
@@ -145,7 +145,7 @@ describe("GearTab analysis subtab", () => {
       "-3,000(7.5 %)",
     )
     expect(screen.getByRole("cell", { name: /Total tuned-stat DPS contribution/ })).toBeVisible()
-    expect(screen.getByText("-4,000")).toBeInTheDocument()
+    expect(screen.getByText("-3,500")).toBeInTheDocument()
   })
 })
 

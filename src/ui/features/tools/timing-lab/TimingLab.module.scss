@@ -1,0 +1,14 @@
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.fields label {
+  display: grid;
+  gap: 6px;
+}
+.fields input {
+  width: 150px;
+  min-height: 36px;
+  max-width: 100%;
+}

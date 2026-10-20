@@ -1280,4 +1280,8 @@ export const AFFIX_ID_TO_STAT_LINE: Readonly<Record<string, string>> = {
   "10694124": "word:damageVsBoss",
   "10694126": "word:minFormless",
   "10694127": "word:maxFormless",
+  "100931001": "word:allMysticBoost",
+  "100941001": "word:allMysticBoost",
+  "105931001": "word:allMysticBoost",
+  "105941001": "word:allMysticBoost",
 }

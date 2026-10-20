@@ -242,6 +242,8 @@ export function receivesForSkill(skill: Skill, classId?: string, inputs?: Inputs
   if (mysticBoostKey) {
     rows.push(gearStatRow(mysticBoostKey, inputs))
   }
+  if (mysticBoostKey || skill.skillType === "mystic")
+    rows.push(gearStatRow("allMysticBoost", inputs))
   const attuneTag = attuneTagOf(skill)
   const attunement = attuneTag
     ? ATTUNEMENT_OPTIONS.find((option) => option.affectsTag === attuneTag)

@@ -124,6 +124,7 @@ export interface Inputs {
   bossBoost: number
   singleMysticBoost: number
   areaMysticBoost: number
+  allMysticBoost: number
 
   classSpecificAttunement: Record<string, number>
 

@@ -35,6 +35,14 @@
   margin-bottom: 10px;
 }
 
+.modelNotice {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.modelNotice a {
+  color: var(--color-accent-bright);
+}
+
 /* No border-top, paired with .tab.active's no border-bottom, so the two merge
  * into one 3-sided container. */
 .tabPanel {

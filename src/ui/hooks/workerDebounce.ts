@@ -3,6 +3,8 @@ import type { WorkerRequest } from "../../engine/dpsWorker"
 export const WORKER_DEBOUNCE_MS = 150
 
 const DEBOUNCE_MS_BY_KIND: Partial<Record<WorkerRequest["kind"], number>> = {
+  graduationPlanner: 0,
+  graduationPlannerCancel: 0,
   bestBuild: 0,
   bestBuildCancel: 0,
   parseSimulation: 0,

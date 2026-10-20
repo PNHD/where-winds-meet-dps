@@ -66,7 +66,10 @@ export function graduationBuildsForProfile(
   const builtin = graduationBuildsFor(inputs.classId)
   const custom = inputs.customGraduationBuild
   if (!custom || custom.classId !== inputs.classId) return builtin
-  return [...builtin, graduationBuildFromCustom(custom)]
+  const authored = graduationBuildFromCustom(custom)
+  const standards = builtin.filter((build) => build.standardized)
+  const standard = standards.find((build) => build.rotationId === custom.rotationId) ?? standards[0]
+  return [...builtin, standard ? { ...authored, standardized: standard.standardized } : authored]
 }
 
 export function followedGraduationBuild(

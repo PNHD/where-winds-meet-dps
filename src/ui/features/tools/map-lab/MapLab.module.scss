@@ -1,0 +1,62 @@
+.file {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 8px 0;
+}
+.map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  margin: 12px 0;
+  width: fit-content;
+  max-width: 100%;
+}
+.map img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 65vh;
+}
+.marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #171717;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+.marker[aria-pressed="true"] {
+  background: #276734;
+}
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  border: 0;
+  margin: 12px 0;
+  padding: 0;
+  min-width: 0;
+}
+.fields label {
+  display: grid;
+  gap: 6px;
+}
+.fields input {
+  max-width: 170px;
+  min-height: 36px;
+}
+.list {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.list li {
+  margin: 10px 0;
+}

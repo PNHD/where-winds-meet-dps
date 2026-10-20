@@ -105,6 +105,7 @@ export interface FormulaContext {
   allMartialBoost?: number
   weaponBoosts?: Record<string, number>
   mysticTypeBoosts?: Record<string, number>
+  allMysticBoost?: number
   generalDamageBoost: number
   chargeBonus: number
   effectiveDefense: number
@@ -499,7 +500,8 @@ export function computeSkillDamage(
   const mysticCategory = art.mysticCategory
   const scopedDamageBoost =
     (weaponBoost !== undefined ? weaponBoost + (ctx.allMartialBoost ?? 0) : 0) +
-    (mysticCategory ? (ctx.mysticTypeBoosts?.[mysticCategory] ?? 0) : 0)
+    (mysticCategory ? (ctx.mysticTypeBoosts?.[mysticCategory] ?? 0) : 0) +
+    (art.skillType === "mystic" || mysticCategory ? (ctx.allMysticBoost ?? 0) : 0)
   const dotMultiplier = ctx.dotDamageMultiplier ?? 1
   const damageBoostTotal =
     ctx.generalDamageBoost +

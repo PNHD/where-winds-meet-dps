@@ -22,6 +22,8 @@ import { RotationTab } from "../ui/features/rotation/rotation-tab/RotationTab"
 import { RotationEditorPanel } from "../ui/features/rotation/rotation-editor-panel/RotationEditorPanel"
 import { SimulationTab } from "../ui/features/simulation/simulation-tab/SimulationTab"
 import { ProfilePanel } from "../ui/features/profile/profile-panel/ProfilePanel"
+import { ToolsTab } from "../ui/features/tools/tools-tab/ToolsTab"
+import { LibraryTab } from "../ui/features/tools/library-tab/LibraryTab"
 import { GearTab } from "../ui/features/gear/gear-tab/GearTab"
 import { TalentsOdditiesTab } from "../ui/features/talents/talents-oddities-tab/TalentsOdditiesTab"
 import { SkillsTab } from "../ui/features/skills/skills-tab/SkillsTab"
@@ -31,8 +33,6 @@ import { SimulationToast, SIMULATION_PATH } from "../ui/layout/simulation-toast/
 import { DpsActivityToast } from "../ui/layout/dps-activity-toast/DpsActivityToast"
 import { GraduationBuildDialog } from "../ui/features/gear/graduation-build-dialog/GraduationBuildDialog"
 import { SetupWizard, type SetupMode } from "../ui/features/setup/setup-wizard/SetupWizard"
-import { BreakthroughDataDialog } from "../ui/layout/breakthrough-data-dialog/BreakthroughDataDialog"
-import { breakthroughDataRequestFor } from "../ui/layout/breakthrough-data-dialog/breakthroughDataRequest"
 import { activeRotationName } from "../ui/features/rotation/rotationOptions"
 import { followedGraduationBuild } from "../engine/graduation"
 import { graduationBuildKey } from "../i18n/contentKeys"
@@ -105,16 +105,6 @@ function AppInner() {
   const [wizard, setWizard] = useState<{ mode: SetupMode; defaultName: string } | null>(() =>
     initial.firstRun ? { mode: "first-run", defaultName: "" } : null,
   )
-
-  const [breakthroughAskedClassIds, setBreakthroughAskedClassIds] = useState<readonly string[]>([])
-  const breakthroughRequest = useMemo(
-    () => (initial.firstRun ? null : breakthroughDataRequestFor(activeDraft.classId)),
-    [initial.firstRun, activeDraft.classId],
-  )
-  const breakthroughAsk =
-    breakthroughRequest && !breakthroughAskedClassIds.includes(breakthroughRequest.classId)
-      ? breakthroughRequest
-      : null
 
   const draftJson = useMemo(() => JSON.stringify(activeDraft), [activeDraft])
   const isDirty = draftJson !== lastSavedJson
@@ -304,6 +294,10 @@ function AppInner() {
     { path: "/rotation-editor", label: t("rotation.rotationEditor") },
     { path: "/simulation", label: t("app.simulation") },
     { path: "/skills", label: t("app.skillEditor") },
+    { path: "/tools", label: t("tools.title") },
+    { path: "/library", label: t("library.title") },
+    { path: "/training", label: t("training.title") },
+    { path: "/arena", label: t("tools.arenaTitle") },
     { path: "/talents", label: t("common.enhancementOdditiesTalents"), align: "right" },
     { path: "/profile", label: t("common.profiles"), gapBefore: true },
   ]
@@ -329,14 +323,6 @@ function AppInner() {
           initialInputs={blankInputs}
           onFinish={handleWizardFinish}
           onCancel={wizard.mode === "new-profile" ? () => setWizard(null) : undefined}
-        />
-      )}
-      {breakthroughAsk && (
-        <BreakthroughDataDialog
-          request={breakthroughAsk}
-          onClose={() =>
-            setBreakthroughAskedClassIds((asked) => [...asked, breakthroughAsk.classId])
-          }
         />
       )}
       {(graduationDialogOpen || mustChooseGraduationBuild) && (
@@ -399,6 +385,9 @@ function AppInner() {
           onRotationClick={goToRotationTab}
         />
 
+        <p className={styles.modelNotice}>
+          <NavLink to="/tools">{t("tools.modelNotice")}</NavLink>
+        </p>
         <nav className={styles.tabs} role="tablist">
           {TABS.map((tab) => (
             <NavLink
@@ -426,9 +415,49 @@ function AppInner() {
           <Routes>
             <Route path="/" element={<Navigate to="/overview" replace />} />
             <Route
+              path="/tools"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                />
+              }
+            />
+            <Route
+              path="/training"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                  view="training"
+                  key="training"
+                />
+              }
+            />
+            <Route
+              path="/library"
+              element={
+                <LibraryTab
+                  inputs={inputs}
+                  profiles={committed.profiles}
+                  profileId={committed.activeId}
+                  onChange={setInputs}
+                />
+              }
+            />
+            <Route
+              path="/arena"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                  view="arena"
+                  key="arena"
+                />
+              }
+            />
+            <Route
               path="/overview"
               element={
                 <OverviewTab
+                  profileId={committed.activeId}
                   inputs={inputs}
                   engineInputs={engineInputs}
                   onChange={setInputs}

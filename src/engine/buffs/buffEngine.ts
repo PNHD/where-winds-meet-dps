@@ -34,7 +34,7 @@ import { BUFF } from "../../data/skills/buffs/ids"
 
 export type BuffParams = Record<string, unknown>
 
-// The timeline's own statuses — gates and debuffs the ledger tracks — so a
+// The timeline's own statuses â€” gates and debuffs the ledger tracks â€” so a
 // module's `ctx.status` can read an id this engine never applies itself.
 export interface TimelineStatuses {
   view: StatusView
@@ -60,14 +60,14 @@ export interface DamageEffectsResult {
   effects: { statKey: StatKey; amount: number }[]
   forceCrit: boolean
   // Post-formula, so it multiplies the finished number rather than joining the
-  // stat sum — 1 when no active def contributes one.
+  // stat sum â€” 1 when no active def contributes one.
   damageFactor: number
   conditionalFinalCrit: ConditionalFinalCrit | null
   // Per-hit art fields a def contributes, summed across active defs. Applied
   // onto the art row rather than into the stat sum, which is why they travel
   // separately from `effects`.
   artBonuses: Partial<Record<ArtBonusField, number>>
-  // Per-source attribution, keyed by def id — read directly by
+  // Per-source attribution, keyed by def id â€” read directly by
   // `tests/engine/buffEngineAdvanced.test.ts` and `mistwillow.test.ts` to pin
   // which def a contribution came from.
   breakdown: Record<string, number>
@@ -75,7 +75,7 @@ export interface DamageEffectsResult {
 }
 
 const DEFAULT_DURATION = 15
-// `runCastEffects`'s synthetic cast context only — never `processSkillCast`'s
+// `runCastEffects`'s synthetic cast context only â€” never `processSkillCast`'s
 // default parameter, whose absent `castTime` must read back as `?? 1`, not `0`.
 const EMPTY_PROPS: SkillProperties = {}
 
@@ -83,8 +83,8 @@ const MISTWILLOW_HEAVY_BUFF = BUFF.mistwillowHeavyBuff
 const MISTWILLOW_LIGHT_BUFF = BUFF.mistwillowLightBuff
 const MISTWILLOW_MERGED_BUFF = BUFF.mistwillowBuff
 
-// Bare, not `debuff-<classId>-…`: whichever class inflicts it names this id,
-// so the engine learns no class (docs/CLASSES.md § "One definition per class").
+// Bare, not `debuff-<classId>-â€¦`: whichever class inflicts it names this id,
+// so the engine learns no class (docs/CLASSES.md Â§ "One definition per class").
 export const QI_IMBALANCE_STATUS = "qiImbalance"
 
 function resolveEffects(module: BuffModule, ctx: EffectContext): Effect[] {
@@ -96,6 +96,7 @@ export class BuffEngine {
   definitions = new Map<string, BuffModule>()
   private activeBuffs = new Map<string, ActiveBuff>()
   private buffHistory: HistoryEntry[] = []
+  private historyByBuffId = new Map<string, HistoryEntry[]>()
   private grantTimes = new Map<string, number[]>()
   private consumeEvents = new Set<string>()
   private statuses: TimelineStatuses | null = null
@@ -364,7 +365,7 @@ export class BuffEngine {
 
   // `rateLimit` caps how many times the WHOLE trigger may grant per window
   // (as opposed to `stackRateLimit`, which caps individual stack grants within
-  // one trigger) — keyed on the bare module id so it never collides with
+  // one trigger) â€” keyed on the bare module id so it never collides with
   // `canGrantStack`'s `"stack:"`-prefixed key.
   private canGrantTrigger(module: BuffModule, applyTime: number): boolean {
     if (!module.rateLimit) return true
@@ -404,7 +405,7 @@ export class BuffEngine {
       ...(stacks !== undefined && { stacks }),
     }
     this.activeBuffs.set(id, entry)
-    this.buffHistory.push({
+    this.recordHistory({
       time,
       buffType: id,
       action: "apply",
@@ -448,7 +449,7 @@ export class BuffEngine {
       expiresAt: time + duration,
       ...(cur.stacks !== undefined && { stacks: cur.stacks }),
     })
-    this.buffHistory.push({ time, buffType: id, action: "refresh", expiresAt: time + duration })
+    this.recordHistory({ time, buffType: id, action: "refresh", expiresAt: time + duration })
   }
 
   isBuffActive(id: string, time: number): boolean {
@@ -463,10 +464,17 @@ export class BuffEngine {
   // runs after the cast walk and appends applies stamped earlier than entries
   // already recorded, so a backwards walk stops at whichever apply happens to
   // sit last and reads a live window as expired.
+  private recordHistory(entry: HistoryEntry): void {
+    this.buffHistory.push(entry)
+    const entries = this.historyByBuffId.get(entry.buffType)
+    if (entries) entries.push(entry)
+    else this.historyByBuffId.set(entry.buffType, [entry])
+  }
+
   private latestApplyAt(id: string, time: number): HistoryEntry | null {
     let latest: HistoryEntry | null = null
-    for (const historyEntry of this.buffHistory) {
-      if (historyEntry.buffType !== id || historyEntry.action !== "apply") continue
+    for (const historyEntry of this.historyByBuffId.get(id) ?? []) {
+      if (historyEntry.action !== "apply") continue
       if (historyEntry.time > time) continue
       if (!latest || historyEntry.time >= latest.time) latest = historyEntry
     }
@@ -487,13 +495,8 @@ export class BuffEngine {
     const rule = module.activeAfterBuffEnds
     if (!rule) return false
     const duration = this.resolveDuration(module, time)
-    const applies = this.buffHistory
-      .filter(
-        (historyEntry) =>
-          historyEntry.buffType === rule.buffId &&
-          historyEntry.action === "apply" &&
-          historyEntry.time <= time,
-      )
+    const applies = (this.historyByBuffId.get(rule.buffId) ?? [])
+      .filter((historyEntry) => historyEntry.action === "apply" && historyEntry.time <= time)
       .sort((a, b) => a.time - b.time)
     if (applies.length === 0) return false
     if (rule.cancelledByReapply) {
@@ -621,13 +624,13 @@ export class BuffEngine {
     }
   }
 
-  // Every damaging hit stacks these, wherever the hit came from — the scope on
+  // Every damaging hit stacks these, wherever the hit came from â€” the scope on
   // such a def says who RECEIVES its bonus, never what grants it a stack, and
   // a def that wants the hit's origin to matter opts in via
   // `stackOnDamageScoped` / `perHitConsume`, both of which go through the same
   // `reaches` the damage query uses. The timeline drives this over the
   // prepass's sorted damage frames, so the stack history is complete before
-  // the first damage query reads it — which is also why every read and write
+  // the first damage query reads it â€” which is also why every read and write
   // here is history-indexed rather than against the live map: the cast walk
   // has already run in full, so the live map holds only each id's last window.
   processDamageHit(time: number, skill?: Skill): void {
@@ -667,14 +670,14 @@ export class BuffEngine {
   }
 
   // A stack buff whose last stack was spent counts as ended, not as an empty
-  // live window — so a top-up needs a surviving stack, exactly like a spend.
+  // live window â€” so a top-up needs a surviving stack, exactly like a spend.
   private restoreStackIntoWindow(module: BuffModule, time: number): void {
     const window = this.latestApplyAt(module.id, time)
     if (!window || time >= window.expiresAt) return
     const before = window.stacks ?? 1
     if (before <= 0 || before >= (module.maxStacks ?? 1)) return
     if (!this.canGrantDamageStack(module, time)) return
-    this.buffHistory.push({
+    this.recordHistory({
       time,
       buffType: module.id,
       action: "apply",
@@ -699,7 +702,7 @@ export class BuffEngine {
     if (!window || time >= window.expiresAt) return false
     const before = window.stacks ?? 1
     if (before <= 0) return false
-    this.buffHistory.push({
+    this.recordHistory({
       time,
       buffType: id,
       action: "apply",
@@ -710,7 +713,7 @@ export class BuffEngine {
   }
 
   // Resolves one cast's consumption against the live pools and spends them.
-  // A generated cast never consumes — only the cast that was authored to.
+  // A generated cast never consumes â€” only the cast that was authored to.
   private processPerCastConsume(
     castTag: string,
     time: number,
@@ -742,7 +745,7 @@ export class BuffEngine {
     }
   }
 
-  // True when this def's bonus rides a Qi phase rather than an actual consume —
+  // True when this def's bonus rides a Qi phase rather than an actual consume â€”
   // the tier-gated second route the same def can take.
   private phaseAlternativeHolds(module: BuffModule, time: number): boolean {
     const alternative = module.perCastConsume?.phaseAlternative
@@ -764,7 +767,7 @@ export class BuffEngine {
     if (before <= 0) return false
     const next = Math.max(0, before - 1)
     this.activeBuffs.set(id, { ...active, stacks: next })
-    this.buffHistory.push({
+    this.recordHistory({
       time,
       buffType: id,
       action: "apply",

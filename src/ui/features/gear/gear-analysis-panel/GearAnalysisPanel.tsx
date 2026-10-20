@@ -70,7 +70,7 @@ function RankCell({ gain, rank }: { gain: number | null; rank: number | undefine
 
 export function GearAnalysisPanel({ engineInputs, currentDps }: Props) {
   const { t } = useI18n()
-  const { rows, isPending } = useGearAnalysis(engineInputs, currentDps)
+  const { rows, allSlotsLoss, isPending } = useGearAnalysis(engineInputs, currentDps)
 
   if (rows.length === 0) {
     return (
@@ -89,7 +89,7 @@ export function GearAnalysisPanel({ engineInputs, currentDps }: Props) {
   const reattuneRanks = ranksBySlot(equippedRows, "reattuneGain")
   const relayRanks = ranksBySlot(equippedRows, "relayGain")
   const sorted = [...equippedRows].sort((rowA, rowB) => rowB.unequipLoss - rowA.unequipLoss)
-  const totalLoss = equippedRows.reduce((sum, row) => sum + row.unequipLoss, 0)
+  const totalLoss = allSlotsLoss ?? 0
 
   return (
     <div className={styles.analysis} style={{ opacity: isPending ? 0.6 : 1 }}>

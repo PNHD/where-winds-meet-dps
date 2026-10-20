@@ -1,8 +1,15 @@
+import { computeStatLab, type StatChange, type StatLabResult } from "./statLab"
 import { findBestBuild, type BestBuildResult } from "./bestBuild"
+import {
+  planGraduation,
+  type GraduationPlannerResult,
+  type PlannerOptions,
+} from "./graduationPlanner"
+import { withPassMemo } from "./passMemo"
 import { runEngine } from "./dps"
 import { applyPieceContribution, maxRelayedClone, relayedCapValue } from "./gearStats"
 import { computeRanking, getWordSpecs } from "./itemRanking"
-import { computeGearAnalysis, type GearSlotAnalysisRow } from "./gearAnalysis"
+import { allSlotsUnequipLoss, computeGearAnalysis, type GearSlotAnalysisRow } from "./gearAnalysis"
 import { probLinearImprove } from "./retunement"
 import {
   computeRetunement,
@@ -25,7 +32,11 @@ import {
 } from "./reattunement"
 import { attunementMax, attunementMin, attunementsFor, attunementLabelKey } from "./attunements"
 import { gearLevelForBreakthrough } from "../definitions/baseStats/breakthroughs"
-import { ftDpsWhenEquipped, ftDpsWithSlotEmpty } from "./fullPotential"
+import {
+  ftEvaluationWhenEquipped,
+  ftDpsWithSlotEmpty,
+  type FullPotentialDps,
+} from "./fullPotential"
 import { withCustomContent } from "./customContent"
 import { withDerivedStats } from "./derivedInputs"
 import {
@@ -46,6 +57,7 @@ import { GEAR_SLOTS } from "./types"
 import type {
   Arsenal,
   BowSet,
+  GearLevel,
   GearPiece,
   GearSlot,
   Inputs,
@@ -59,8 +71,10 @@ const OUTCOME_KEYS: readonly HitOutcome[] = ["abrasion", "normal", "crit", "affi
 export interface DpsDelta {
   current: number
   upgraded: number
+  upgradedLevel?: GearLevel
   fullPotential: number
   fullPotentialE: number
+  fullPotentialLevel?: GearLevel
 }
 
 export interface DpsWorkerRequest {
@@ -111,13 +125,13 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
   const byId = new Map<string, GearPiece>()
   for (const piece of inputs.inventory) byId.set(piece.id, piece)
 
-  const ftDpsByPieceId = new Map<string, number>()
-  function ftDpsFor(piece: GearPiece): number {
-    const known = ftDpsByPieceId.get(piece.id)
+  const ftByPieceId = new Map<string, FullPotentialDps>()
+  function ftFor(piece: GearPiece): FullPotentialDps {
+    const known = ftByPieceId.get(piece.id)
     if (known !== undefined) return known
-    const ftDps = ftDpsWhenEquipped(piece, inputs)
-    ftDpsByPieceId.set(piece.id, ftDps)
-    return ftDps
+    const ft = ftEvaluationWhenEquipped(piece, inputs)
+    ftByPieceId.set(piece.id, ft)
+    return ft
   }
 
   const ftRefBySlot = new Map<GearSlot, number>()
@@ -126,7 +140,7 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
     if (cached !== undefined) return cached
     const equippedId = inputs.equipped[slot]
     const equipped = equippedId ? (byId.get(equippedId) ?? null) : null
-    const ref = equipped ? ftDpsFor(equipped) : ftDpsWithSlotEmpty(slot, inputs)
+    const ref = equipped ? ftFor(equipped).dps : ftDpsWithSlotEmpty(slot, inputs)
     ftRefBySlot.set(slot, ref)
     return ref
   }
@@ -140,22 +154,21 @@ function computeDpsDeltas(req: DpsWorkerRequest): DpsWorkerResponse {
     const unequippedBaseline = equipped ? applyPieceContribution(inputs, equipped, -1) : inputs
 
     const currentDps = dpsForSwap(unequippedBaseline, candidate)
-    const upgraded = maxRelayedClone(
-      candidate,
-      inputs,
-      gearLevelForBreakthrough(inputs.breakthrough),
-    )
+    const upgradedLevel = gearLevelForBreakthrough(inputs.breakthrough)
+    const upgraded = maxRelayedClone(candidate, inputs, upgradedLevel)
     const upgradedDps = dpsForSwap(unequippedBaseline, upgraded)
 
-    const ftCandidateDps = ftDpsFor(candidate)
-    const fullPotential = ftCandidateDps - baselineDps
-    const fullPotentialE = ftCandidateDps - ftReferenceForSlot(candidate.slot)
+    const ft = ftFor(candidate)
+    const fullPotential = ft.dps - baselineDps
+    const fullPotentialE = ft.dps - ftReferenceForSlot(candidate.slot)
 
     out[id] = {
       current: currentDps - baselineDps,
       upgraded: upgradedDps - baselineDps,
+      upgradedLevel,
       fullPotential,
       fullPotentialE,
+      fullPotentialLevel: ft.level,
     }
   }
 
@@ -365,6 +378,7 @@ function computeWordMax(req: WordMaxWorkerRequest): WordMaxWorkerResponse {
 }
 
 export interface RankingWorkerRequest {
+  block?: { index: number; count: number }
   reqId: number
   inputs: Inputs
   baselineDps: number
@@ -376,10 +390,15 @@ export interface RankingWorkerResponse {
 }
 
 function computeRankingRequest(req: RankingWorkerRequest): RankingWorkerResponse {
-  return { reqId: req.reqId, rows: computeRanking(req.inputs, req.baselineDps) }
+  return {
+    reqId: req.reqId,
+    rows: computeRanking(req.inputs, req.baselineDps, undefined, req.block),
+  }
 }
 
 export interface GearAnalysisWorkerRequest {
+  slots?: readonly GearSlot[]
+  includeAllSlotsLoss?: boolean
   reqId: number
   inputs: Inputs
   baselineDps: number
@@ -388,10 +407,16 @@ export interface GearAnalysisWorkerRequest {
 export interface GearAnalysisWorkerResponse {
   reqId: number
   rows: GearSlotAnalysisRow[]
+  allSlotsLoss: number
 }
 
 function computeGearAnalysisRequest(req: GearAnalysisWorkerRequest): GearAnalysisWorkerResponse {
-  return { reqId: req.reqId, rows: computeGearAnalysis(req.inputs, req.baselineDps) }
+  return {
+    reqId: req.reqId,
+    rows: computeGearAnalysis(req.inputs, req.baselineDps, req.slots),
+    allSlotsLoss:
+      !req.slots || req.includeAllSlotsLoss ? allSlotsUnequipLoss(req.inputs, req.baselineDps) : 0,
+  }
 }
 
 export interface SetTilesWorkerRequest {
@@ -713,7 +738,23 @@ function computeGraduation(req: GraduationWorkerRequest): GraduationWorkerRespon
 }
 
 export type WorkerRequest =
-  | { kind: "bestBuild"; reqId: number; inputs: Inputs; sourceKey: string }
+  | {
+      kind: "graduationPlanner"
+      reqId: number
+      inputs: Inputs
+      sourceKey: string
+      options: PlannerOptions
+    }
+  | { kind: "graduationPlannerCancel"; reqId: number }
+  | { kind: "statLab"; reqId: number; inputs: Inputs; sourceKey: string; changes: StatChange[] }
+  | { kind: "statLabCancel"; reqId: number }
+  | {
+      kind: "bestBuild"
+      reqId: number
+      inputs: Inputs
+      sourceKey: string
+      evaluationLimit?: number
+    }
   | { kind: "bestBuildCancel"; reqId: number }
   | ({ kind: "dpsDeltas" } & DpsWorkerRequest)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerRequest)
@@ -731,6 +772,8 @@ export type WorkerRequest =
   | ({ kind: "graduation" } & GraduationWorkerRequest)
 
 export type WorkerResponse =
+  | { kind: "graduationPlanner"; reqId: number; sourceKey: string; result: GraduationPlannerResult }
+  | { kind: "statLab"; reqId: number; sourceKey: string; result: StatLabResult }
   | { kind: "bestBuild"; reqId: number; sourceKey: string; result: BestBuildResult }
   | ({ kind: "dpsDeltas" } & DpsWorkerResponse)
   | ({ kind: "equippedDeltas" } & EquippedDeltasWorkerResponse)
@@ -749,31 +792,65 @@ export type WorkerResponse =
 
 const cancelledReqIds = new Set<number>()
 const activeBestBuildIds = new Set<number>()
+const activeStatLabIds = new Set<number>()
 
-self.onmessage = (e: MessageEvent<WorkerRequest>) => {
+const handleWorkerMessage = (e: MessageEvent<WorkerRequest>) => {
   const req = e.data
-  if (req.kind === "bestBuildCancel") {
+  if (req.kind === "graduationPlannerCancel") {
     if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
-  } else if (req.kind === "bestBuild") {
+  } else if (req.kind === "graduationPlanner") {
     activeBestBuildIds.add(req.reqId)
-    void findBestBuild(req.inputs, { cancelled: () => cancelledReqIds.has(req.reqId) }).then(
-      async (result) => {
-        if (result.status === "ok") {
-          const advice = await analyzeBestBuild(req.inputs, result, () =>
-            cancelledReqIds.has(req.reqId),
-          )
-          result = advice.status === "cancelled" ? { status: "cancelled" } : { ...result, advice }
-        }
-        activeBestBuildIds.delete(req.reqId)
+    void planGraduation(req.inputs, req.options, {
+      cancelled: () => cancelledReqIds.has(req.reqId),
+    }).then((result) => {
+      activeBestBuildIds.delete(req.reqId)
+      cancelledReqIds.delete(req.reqId)
+      ;(self as unknown as Worker).postMessage({
+        kind: "graduationPlanner",
+        reqId: req.reqId,
+        sourceKey: req.sourceKey,
+        result,
+      })
+    })
+  } else if (req.kind === "statLabCancel") {
+    if (activeStatLabIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
+  } else if (req.kind === "statLab") {
+    activeStatLabIds.add(req.reqId)
+    void computeStatLab(req.inputs, req.changes, () => cancelledReqIds.has(req.reqId)).then(
+      (result) => {
+        activeStatLabIds.delete(req.reqId)
         cancelledReqIds.delete(req.reqId)
         ;(self as unknown as Worker).postMessage({
-          kind: "bestBuild",
+          kind: "statLab",
           reqId: req.reqId,
           sourceKey: req.sourceKey,
           result,
         })
       },
     )
+  } else if (req.kind === "bestBuildCancel") {
+    if (activeBestBuildIds.has(req.reqId)) cancelledReqIds.add(req.reqId)
+  } else if (req.kind === "bestBuild") {
+    activeBestBuildIds.add(req.reqId)
+    void findBestBuild(req.inputs, {
+      cancelled: () => cancelledReqIds.has(req.reqId),
+      evaluationLimit: req.evaluationLimit,
+    }).then(async (result) => {
+      if (result.status === "ok") {
+        const advice = await analyzeBestBuild(req.inputs, result, () =>
+          cancelledReqIds.has(req.reqId),
+        )
+        result = advice.status === "cancelled" ? { status: "cancelled" } : { ...result, advice }
+      }
+      activeBestBuildIds.delete(req.reqId)
+      cancelledReqIds.delete(req.reqId)
+      ;(self as unknown as Worker).postMessage({
+        kind: "bestBuild",
+        reqId: req.reqId,
+        sourceKey: req.sourceKey,
+        result,
+      })
+    })
   } else if (req.kind === "dpsDeltas") {
     const res = computeDpsDeltas(req)
     ;(self as unknown as Worker).postMessage({ kind: "dpsDeltas", ...res })
@@ -828,6 +905,10 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     const res = computeGraduation(req)
     ;(self as unknown as Worker).postMessage({ kind: "graduation", ...res })
   }
+}
+
+if (typeof self !== "undefined" && typeof document === "undefined") {
+  self.onmessage = (event) => withPassMemo(() => handleWorkerMessage(event))
 }
 
 export {

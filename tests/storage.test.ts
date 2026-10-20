@@ -1576,10 +1576,11 @@ describe("class id degrade (an unrecognised classId falls back to the default bu
     localStorage.clear()
     const { profiles } = loadProfiles()
     expect(profiles[0].inputs.classId).toBe(defaultInputs.classId)
+    expect(profiles[0].inputs.breakthrough).toBe(defaultInputs.breakthrough)
     expect(profiles[0].inputs.arsenal).toBe(defaultInputs.arsenal)
     expect(profiles[0].inputs.mindMethods).toEqual(defaultInputs.mindMethods)
     expect(profiles[0].inputs.martialArtsTalents).toEqual(
-      getDefaultTalentsForClass(defaultInputs.classId),
+      getDefaultTalentsForClass(defaultInputs.classId, defaultInputs.breakthrough),
     )
   })
 

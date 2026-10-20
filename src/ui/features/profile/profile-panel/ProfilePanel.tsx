@@ -3,7 +3,7 @@ import type { StoredProfile } from "../../../../engine/types"
 import type { Skill } from "../../../../engine/skill"
 import type { Buff } from "../../../../engine/buff"
 import type { Debuff } from "../../../../engine/debuff"
-import { exportProfile, importProfile } from "../../../../storage"
+import { exportProfile, importProfile, MAX_PROFILE_IMPORT_CHARS } from "../../../../storage"
 import { useI18n } from "../../../../i18n/i18nContext"
 import { classKey } from "../../../../i18n/contentKeys"
 import { classDefinition } from "../../../../definitions/classes/registry"
@@ -12,6 +12,7 @@ import { useProfileMetrics } from "../../../hooks/useProfileMetrics"
 import { formatCompactDamage, formatNumber } from "../../../utils/numberFormatting"
 import { TextInput } from "../../../components/text-input/TextInput"
 import styles from "./ProfilePanel.module.scss"
+import { ProfileSharePreview } from "../profile-share-preview/ProfileSharePreview"
 
 interface Props {
   profiles: StoredProfile[]
@@ -43,6 +44,10 @@ export function ProfilePanel({
   const { t } = useI18n()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState("")
+  const [pendingImport, setPendingImport] = useState<StoredProfile | null>(null)
+  const [importError, setImportError] = useState("")
+  const [sharing, setSharing] = useState<StoredProfile | null>(null)
+  const importGeneration = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { metricsByProfileId, isPending } = useProfileMetrics(
     profiles,
@@ -97,16 +102,22 @@ export function ProfilePanel({
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const generation = ++importGeneration.current
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
+    setPendingImport(null)
+    setImportError("")
     try {
+      if (file.size > MAX_PROFILE_IMPORT_CHARS) throw new Error(t("profile.importTooLarge"))
       const text = await file.text()
+      if (generation !== importGeneration.current) return
       const imported = importProfile(text)
-      onImport(imported)
+      setPendingImport(imported)
     } catch (err) {
+      if (generation !== importGeneration.current) return
       const msg = err instanceof Error ? err.message : String(err)
-      alert(`${t("common.importFailed")}: ${msg}`)
+      setImportError(`${t("common.importFailed")}: ${msg}`)
     }
   }
 
@@ -129,6 +140,48 @@ export function ProfilePanel({
           onChange={handleImportFile}
         />
       </div>
+
+      {sharing && (
+        <ProfileSharePreview
+          profile={sharing}
+          onDownload={handleExport}
+          onClose={() => setSharing(null)}
+        />
+      )}
+      {importError && <p role="alert">{importError}</p>}
+      {pendingImport && (
+        <section className="panel" aria-label={t("profile.importPreview")}>
+          <h2>{t("profile.importPreview")}</h2>
+          <p>
+            {pendingImport.name} · {classLabel(pendingImport.inputs.classId)}
+          </p>
+          <p>
+            {t("profile.importInventory")}: {pendingImport.inputs.inventory.length}
+          </p>
+          <p>{t("profile.importConsent")}</p>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => {
+              importGeneration.current++
+              onImport(pendingImport)
+              setPendingImport(null)
+            }}
+          >
+            {t("profile.importConfirm")}
+          </button>{" "}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              importGeneration.current++
+              setPendingImport(null)
+            }}
+          >
+            {t("common.cancel")}
+          </button>
+        </section>
+      )}
 
       <div className={styles.cardGrid}>
         {profiles.map((profile) => {
@@ -220,6 +273,9 @@ export function ProfilePanel({
                 </button>
                 <button type="button" className="btn" onClick={() => handleExport(profile)}>
                   {t("common.export")}
+                </button>
+                <button type="button" className="btn" onClick={() => setSharing(profile)}>
+                  {t("profile.shareEquipped")}
                 </button>
                 <div className={styles.actionsSpacer} />
                 <button

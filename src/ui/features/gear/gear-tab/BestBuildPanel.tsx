@@ -1,6 +1,8 @@
+import { useState } from "react"
+import { Select } from "../../../components/select/Select"
 import type { Inputs } from "../../../../engine/types"
 import { GEAR_SLOTS } from "../../../../engine/types"
-import { applyBestBuild } from "../../../../engine/bestBuildSelection"
+import { BEST_BUILD_LIMITS, applyBestBuild } from "../../../../engine/bestBuildSelection"
 import { useI18n } from "../../../../i18n/i18nContext"
 import { useBestBuild } from "../../../hooks/useBestBuild"
 import { GEAR_SLOT_KEYS } from "../shared/gearSlotKeys"
@@ -26,7 +28,8 @@ export function BestBuildPanel({
   onChange(next: Inputs): void
 }) {
   const { t } = useI18n()
-  const search = useBestBuild(optimizerInputs, profileId)
+  const [evaluationLimit, setEvaluationLimit] = useState<number>(BEST_BUILD_LIMITS.evaluations)
+  const search = useBestBuild(optimizerInputs, profileId, evaluationLimit)
   const result = search.result
   return (
     <section className="panel" aria-label={t("common.bestBuild")}>
@@ -46,6 +49,22 @@ export function BestBuildPanel({
           </button>
         )}
       </div>
+      <label>
+        {t("gear.bestBuild.searchBudget")}
+        <Select
+          ariaLabel={t("gear.bestBuild.searchBudget")}
+          value={String(evaluationLimit)}
+          onChange={(value) => setEvaluationLimit(Number(value))}
+          options={[
+            { value: "256", label: t("gear.bestBuild.quickSearch") },
+            { value: "1024", label: t("gear.bestBuild.standardSearch") },
+            {
+              value: String(BEST_BUILD_LIMITS.evaluations),
+              label: t("gear.bestBuild.maximumSearch"),
+            },
+          ]}
+        />
+      </label>
       <p>{t("gear.bestBuild.scope")}</p>
       {search.isPending && <p role="status">{t("gear.bestBuild.searching")}</p>}
       {result?.status === "error" && <p role="alert">{t(ERROR_KEYS[result.reason])}</p>}
@@ -80,7 +99,7 @@ export function BestBuildPanel({
                 inputs,
                 result,
                 search.sourceKey,
-                JSON.stringify({ profileId, inputs: optimizerInputs }),
+                JSON.stringify({ profileId, inputs: optimizerInputs, evaluationLimit }),
               )
               if (next) onChange(next)
             }}
