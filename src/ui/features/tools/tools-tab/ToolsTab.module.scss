@@ -64,6 +64,10 @@
   padding: 12px;
   margin: 12px 0;
 }
+.piecePreview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 @include breakpoints.below(breakpoints.$bp-560) {
   .form {
     display: grid;

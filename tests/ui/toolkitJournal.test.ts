@@ -105,3 +105,14 @@ it("uses absolute deadlines after suspension and clamps expiry at zero", () => {
   expect(remainingSeconds(10_000, 1001)).toBe(9)
   expect(remainingSeconds(10_000, 15_000)).toBe(0)
 })
+
+it("preserves legacy mode-less matches and separates manual Arena and GvG observations", () => {
+  expect(parseJournal(journalText(entries))).toEqual(entries)
+  for (const mode of ["arena1v1", "arena3v3", "gvg", "other", "unknown"] as const) {
+    const match = { ...entries[2], mode } as JournalEntry
+    expect(parseJournal(journalText([match]))).toEqual([match])
+  }
+  expect(() =>
+    parseJournal(JSON.stringify({ v: 1, entries: [{ ...entries[2], mode: "ranked-proof" }] })),
+  ).toThrow()
+})

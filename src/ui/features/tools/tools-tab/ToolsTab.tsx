@@ -8,6 +8,7 @@ import { Select } from "../../../components/select/Select"
 import {
   JOURNAL_LIMIT,
   JOURNAL_MAX_BYTES,
+  MATCH_MODES,
   TOOLKIT_KEY,
   journalText,
   localCalendarDate,
@@ -21,6 +22,7 @@ import { TimingLab } from "../timing-lab/TimingLab"
 import { ColorLab } from "../color-lab/ColorLab"
 import { LatencyLab } from "../latency-lab/LatencyLab"
 import { MapLab } from "../map-lab/MapLab"
+import { TrainingPanel, type TrainingContext } from "../training-panel/TrainingPanel"
 
 const MISSING_PATHS = [
   {
@@ -49,11 +51,19 @@ const MISSING_PATHS = [
   },
 ]
 const RESULT_KEYS = { win: "tools.win", loss: "tools.loss", draw: "tools.draw" }
+const MODE_KEYS = {
+  unknown: "tools.modeUnknown",
+  arena1v1: "tools.mode1v1",
+  arena3v3: "tools.mode3v3",
+  gvg: "tools.modeGvg",
+  other: "tools.modeOther",
+}
 const KIND_KEYS = {
   timer: "tools.timer",
   pity: "tools.pity",
   match: "tools.match",
   marker: "tools.marker",
+  training: "training.title",
 }
 const FORM_KINDS = ["timer", "pity", "match"] as const
 const ERROR_KEYS: Record<string, string> = {
@@ -83,14 +93,23 @@ function download(text: string, name: string) {
   URL.revokeObjectURL(url)
 }
 
-export function ToolsTab() {
+export function ToolsTab({
+  context,
+  view = "all",
+}: {
+  context: TrainingContext
+  view?: "all" | "training" | "arena"
+}) {
   const { t } = useI18n()
   const confirm = useConfirm()
   const [journal, setJournal] = useState(readJournal)
   const [error, setError] = useState("")
   const [pending, setPending] = useState<JournalEntry[] | null>(null)
   const [saving, setSaving] = useState(false)
-  const [kind, setKind] = useState<(typeof FORM_KINDS)[number]>("timer")
+  const [kind, setKind] = useState<(typeof FORM_KINDS)[number]>(
+    view === "arena" ? "match" : "timer",
+  )
+  const [mode, setMode] = useState<(typeof MATCH_MODES)[number]>("unknown")
   const [name, setName] = useState("")
   const [minutes, setMinutes] = useState("10")
   const [date, setDate] = useState(localCalendarDate)
@@ -136,7 +155,7 @@ export function ToolsTab() {
       if (!Number.isFinite(duration) || duration < 1 || duration > 1440) return
       entry = { ...base, kind, deadline: Date.now() + Math.round(duration * 60_000) }
     } else if (kind === "pity") entry = { ...base, kind, count: 0 }
-    else entry = { ...base, kind, date, result, note }
+    else entry = { ...base, kind, date, result, note, mode }
     if (await save([...entries, entry])) {
       setName("")
       setNote("")
@@ -167,37 +186,51 @@ export function ToolsTab() {
 
   return (
     <div className={styles.tools}>
-      <section className="panel">
-        <h2>{t("tools.title")}</h2>
-        <p>{t("tools.privacy")}</p>
-        <p>{t("tools.currentDps")}</p>
-      </section>
-      <section className="panel" aria-label={t("tools.coverage")}>
-        <h2>{t("tools.coverage")}</h2>
-        <p>{t("tools.patchNotice")}</p>
-        <ul className={styles.paths}>
-          {CLASS_DEFS().map((def) => (
-            <li key={def.id}>
-              <strong>{t(classKey(def.id), def.displayName)}</strong>
-              <span>{t(def.validated ? "tools.calibrated" : "tools.modelOnly")}</span>
-            </li>
-          ))}
-          {MISSING_PATHS.map((path) => (
-            <li key={path.labelKey}>
-              <strong>{t(path.labelKey)}</strong>
-              <span>{t("tools.dataNeeded")}</span>
-              <a href={path.source} target="_blank" rel="noreferrer">
-                {t("tools.officialSource")}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <p>{t("tools.missingDetail")}</p>
-      </section>
-      <TimingLab />
-      <ColorLab />
-      <LatencyLab />
-      <MapLab entries={entries} onSave={save} onDelete={(id) => void remove(id)} />
+      {view === "all" && (
+        <>
+          <section className="panel">
+            <h2>{t("tools.title")}</h2>
+            <p>{t("tools.privacy")}</p>
+            <p>{t("tools.currentDps")}</p>
+          </section>
+          <section className="panel" aria-label={t("tools.coverage")}>
+            <h2>{t("tools.coverage")}</h2>
+            <p>{t("tools.patchNotice")}</p>
+            <ul className={styles.paths}>
+              {CLASS_DEFS().map((def) => (
+                <li key={def.id}>
+                  <strong>{t(classKey(def.id), def.displayName)}</strong>
+                  <span>{t(def.validated ? "tools.calibrated" : "tools.modelOnly")}</span>
+                </li>
+              ))}
+              {MISSING_PATHS.map((path) => (
+                <li key={path.labelKey}>
+                  <strong>{t(path.labelKey)}</strong>
+                  <span>{t("tools.dataNeeded")}</span>
+                  <a href={path.source} target="_blank" rel="noreferrer">
+                    {t("tools.officialSource")}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p>{t("tools.missingDetail")}</p>
+          </section>
+          <TimingLab />
+          <ColorLab />
+          <LatencyLab />
+          <MapLab entries={entries} onSave={save} onDelete={(id) => void remove(id)} />
+        </>
+      )}
+      {view === "arena" && (
+        <>
+          <section className="panel">
+            <h2>{t("tools.arenaTitle")}</h2>
+            <p>{t("tools.arenaNotice")}</p>
+          </section>
+          <TimingLab />
+        </>
+      )}
+      {view !== "arena" && <TrainingPanel {...context} entries={entries} onSave={save} />}
       <section className="panel" aria-label={t("tools.journal")}>
         <h2>{t("tools.journal")}</h2>
         <p>{t("tools.manualNotice")}</p>
@@ -312,6 +345,15 @@ export function ToolsTab() {
             {kind === "match" && (
               <>
                 <label>
+                  {t("tools.mode")}
+                  <Select
+                    ariaLabel={t("tools.mode")}
+                    value={mode}
+                    onChange={setMode}
+                    options={MATCH_MODES.map((value) => ({ value, label: t(MODE_KEYS[value]) }))}
+                  />
+                </label>
+                <label>
                   {t("tools.matchDate")}
                   <input
                     type="date"
@@ -408,8 +450,32 @@ export function ToolsTab() {
               {entry.kind === "match" && (
                 <>
                   <p>
-                    {entry.date} · {t(RESULT_KEYS[entry.result])}
+                    {entry.date} · {t(RESULT_KEYS[entry.result])} ·{" "}
+                    {t(MODE_KEYS[entry.mode ?? "unknown"])}
                   </p>
+                  <p>{entry.note}</p>
+                </>
+              )}
+              {entry.kind === "training" && (
+                <>
+                  <p>
+                    {entry.date} · {entry.classId} · {entry.rotationId} · {entry.patch} ·{" "}
+                    {entry.target}
+                  </p>
+                  <p>
+                    {t("training.observed")}: {(entry.damage / entry.duration).toFixed(2)} ·{" "}
+                    {entry.duration} s
+                  </p>
+                  <p>
+                    {t("training.modeled")}: {entry.modeledDps.toFixed(2)} · {entry.modeledDuration}{" "}
+                    s
+                  </p>
+                  <p>
+                    {t("training.context")}: {entry.profileId} · {entry.fingerprint}
+                  </p>
+                  <a href={entry.source} target="_blank" rel="noreferrer">
+                    {t("training.source")}
+                  </a>
                   <p>{entry.note}</p>
                 </>
               )}

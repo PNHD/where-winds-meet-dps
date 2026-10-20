@@ -10,6 +10,7 @@ import {
   type JournalEntry,
 } from "../../src/ui/features/tools/toolkitJournal"
 import { installTestLocks } from "./toolkitTestLocks"
+import { defaultInputs } from "../../src/engine/defaults"
 
 beforeEach(() => {
   localStorage.clear()
@@ -62,7 +63,22 @@ function open() {
   return render(
     <I18nProvider>
       <ConfirmProvider>
-        <ToolsTab />
+        <ToolsTab
+          context={{
+            inputs: defaultInputs,
+            profileId: "existing",
+            result: {
+              dps: 100,
+              rotationDuration: 30,
+              castDuration: 30,
+              totalDamage: 3000,
+              graduationRate: null,
+              perSkill: [],
+              ranking: [],
+              warnings: [],
+            },
+          }}
+        />
       </ConfirmProvider>
     </I18nProvider>,
   )

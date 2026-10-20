@@ -1,5 +1,19 @@
 # PNH-50 consolidated upstream, toolkit and CI acceptance
 
+## Current continuation - 2026-10-20
+
+The current owner directive supersedes the previous PARTIAL stop instruction and unconditional deployment prohibition. Continue reversible local engineering; deployment to the existing wonton-wwm project is conditional on complete product acceptance. This working batch has not reached that acceptance and must not deploy.
+
+Recovered baseline74952e3c is preserved and is the current open Draft PR5 head. Its final Windows full suite and CI39284774656 both passed; earlier timeouts below are historical. Linear issue/comments reads currently require reauthentication, so latest external directives are UNKNOWN and synchronization is SYNC_PENDING; current owner instructions here govern local continuation.
+
+This batch adds searchable pinned model references, private measured-observation capture linked to selected profile/class/rotation and SHA256 input context, manual Arena/GvG match modes, and reviewed cross-profile gear copies into the current draft. A gear copy preserves rolls, retune history and unknown metadata, receives a new identity, and never auto-equips or modifies the source profile. It is explicitly an independent copy, not a canonical synchronized physical-item migration. Journal backup/restore/conflict handling is reused. Observations never set a class's validated flag or overwrite model coefficients.
+
+Migration decision: no calculator-profile migration is needed; schema29, stored inputs, selected Breakthrough/rotation/equipment and engine data are unchanged. Journal additions are additive: legacy mode-less matches remain byte-shape compatible and display unknown mode; old entries and backups still parse. No live V33/V34 or legacy-workspace cutover is registered. Their source/dependency and semantic-preservation gates remain open. No destructive migration is authorized.
+
+Verification and current numerical/source disposition are recorded in adjacent pnh-50-continuation-evidence-20261020. Until all required checks and missing product/source qualifications close, status remains incomplete. This batch does not claim complete advanced legacy Library/Arena/GvG parity, current-patch timelines/Qi, or all-eleven-path numerical acceptance. No numerical fixture was regenerated.
+
+## Historical acceptance interpretation (superseded where stated above)
+
 2026-10-19. Overall product acceptance: **PARTIAL / source qualification HOLD**. Merge, main changes, tags/releases and ALL Cloudflare deployments remain forbidden. A green engineering gate is not release authorization or eleven-path completion.
 
 ## Source and exact-candidate receipts

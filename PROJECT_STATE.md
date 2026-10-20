@@ -1,4 +1,32 @@
-# PNH-50 consolidated upstream + toolkit + CI
+# PNH-50 browser product completion
+
+PM_STATE_SNAPSHOT v6 - 2026-10-20. Supersedes v5 below for current scope, authority and launch state. Mutable facts require re-verification.
+
+GOAL: finish all applicable source-independent PNH-50/11/12/13/14 browser engineering and independently sourced PNH-9 numerical qualification; complete regression, preservation, independent review, CI, browser QA and release preflight before conditional deployment to the existing wonton-wwm project.
+CURRENT_GATE: ENGINEERING_AND_SOURCE_QUALIFICATION
+ACCEPTANCE: IN_PROGRESS; full product acceptance has not been reached.
+WORKTREE: E:/AIProjects/repository/pnh-50-free-web-toolkit-20261016
+BRANCH: PNHD/pnh-50-free-web-toolkit-20261016
+PRESERVED_REF: 74952e3c4b39bc46b82978958ae10ce964f595ef / b3194aa619fac6bc02b57e71155c61d0955b31bf
+BASE_PRODUCTION: 15d9bc77f4129f1640b03fa2524adda4e2e9494d
+VERIFIED_REMOTE: PNHD/where-winds-meet-dps Draft PR5 OPEN, draft=true, head74952e3c; CI39284774656 SUCCESS. Always use explicit --repo: default gh routing resolves to the upstream repository.
+VERIFIED_BASELINE_CHECKS: final-manifest.json and final-r3-validation.json record full Windows regression, formatting, lint, types and build PASS at74952e3c. Older Windows timeout observations remain historical evidence, not this baseline's current result.
+OWNER_DIRECTIVE: current conversation OWNER OVERRIDE 2026-10-20 authorizes continuous reversible local D0-D2 engineering and conditional existing-project deployment only after complete acceptance. The previous PARTIAL return instruction is superseded. No authorization to deploy a partial candidate, fabricate sources, copy GPL/protected data, merge PRs, destroy data, acquire credentials or spend.
+SURFACE: ORCA_CODEX; single implementation writer, same worktree/session continuity.
+ACCOUNT_POLICY: AUTO_HEADROOM; current Orca account quota usable at recovery (16% session used, 2% weekly used). No account/runtime configuration changed.
+TRACKER: Linear PNH-50 issue and comments calls return UNAUTHORIZED / reauthentication required. Local reports are authoritative for current engineering; external synchronization SYNC_PENDING. This does not block local work.
+STORAGE_ROUTE: existing repo reports plus adjacent evidence, zero Airtable creates.
+SOURCE_OF_TRUTH: current Git, tested working diff and exact receipts; v5/source matrices only as recovered navigation.
+EVIDENCE_URI: E:/AIProjects/repository/pnh-50-continuation-evidence-20261020/
+CURRENT_WORK: Library reference route, context-bound private Training observations, explicit cross-profile gear copies, manual Arena/GvG mode separation and compatibility tests. Existing engine/calibrated fixtures, profile schema29, eight-piece/40-word Graduation and disabled Breakthrough popup remain acceptance invariants.
+SOURCE_GATES: independently reusable complete Global2.3 coefficients, hit/cancel/resource transitions and matched rotations for six absent paths; independently measured Jade anchor; source/dependency-complete changed timeline/Qi and numerical food/progression/set models. Reassess sources; do not borrow numbers from availability flags or relative patch deltas.
+NEXT_ACTION: finish the working batch, then run unchanged full engineering gates, copied-storage/browser QA, independent immutable-source review and permitted same-branch CI; continue any remaining applicable engineering before returning at a genuine source/manual/D3 gate.
+NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:RESUME
+SESSION_ACTION: CONTINUE_SAME_SESSION
+MANUAL_GATE: missing qualified numerical/source evidence affects only dependent work; no permission to deploy before full acceptance.
+WRITE_RECEIPT: local state update only; Linear SYNC_PENDING, no production/PR changes in this continuation yet.
+
+## Historical snapshot v5 (superseded)
 
 PM_STATE_SNAPSHOT v5 - 2026-10-19. Supersedes v4; navigation only, reverify mutable Git/CI/browser metadata.
 

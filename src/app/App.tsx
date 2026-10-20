@@ -23,6 +23,7 @@ import { RotationEditorPanel } from "../ui/features/rotation/rotation-editor-pan
 import { SimulationTab } from "../ui/features/simulation/simulation-tab/SimulationTab"
 import { ProfilePanel } from "../ui/features/profile/profile-panel/ProfilePanel"
 import { ToolsTab } from "../ui/features/tools/tools-tab/ToolsTab"
+import { LibraryTab } from "../ui/features/tools/library-tab/LibraryTab"
 import { GearTab } from "../ui/features/gear/gear-tab/GearTab"
 import { TalentsOdditiesTab } from "../ui/features/talents/talents-oddities-tab/TalentsOdditiesTab"
 import { SkillsTab } from "../ui/features/skills/skills-tab/SkillsTab"
@@ -294,6 +295,9 @@ function AppInner() {
     { path: "/simulation", label: t("app.simulation") },
     { path: "/skills", label: t("app.skillEditor") },
     { path: "/tools", label: t("tools.title") },
+    { path: "/library", label: t("library.title") },
+    { path: "/training", label: t("training.title") },
+    { path: "/arena", label: t("tools.arenaTitle") },
     { path: "/talents", label: t("common.enhancementOdditiesTalents"), align: "right" },
     { path: "/profile", label: t("common.profiles"), gapBefore: true },
   ]
@@ -410,7 +414,43 @@ function AppInner() {
         <fieldset className={styles.routeFields} disabled={areInputsLocked}>
           <Routes>
             <Route path="/" element={<Navigate to="/overview" replace />} />
-            <Route path="/tools" element={<ToolsTab />} />
+            <Route
+              path="/tools"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                />
+              }
+            />
+            <Route
+              path="/training"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                  view="training"
+                />
+              }
+            />
+            <Route
+              path="/library"
+              element={
+                <LibraryTab
+                  inputs={inputs}
+                  profiles={committed.profiles}
+                  profileId={committed.activeId}
+                  onChange={setInputs}
+                />
+              }
+            />
+            <Route
+              path="/arena"
+              element={
+                <ToolsTab
+                  context={{ inputs: configuredInputs, profileId: committed.activeId, result }}
+                  view="arena"
+                />
+              }
+            />
             <Route
               path="/overview"
               element={
