@@ -24,9 +24,11 @@ export function TrainingPanel({
   result,
   entries,
   onSave,
+  journalSaving,
 }: TrainingContext & {
   entries: JournalEntry[] | null
   onSave: (entries: JournalEntry[]) => Promise<boolean>
+  journalSaving: boolean
 }) {
   const { t } = useI18n()
   const [name, setName] = useState("")
@@ -45,7 +47,7 @@ export function TrainingPanel({
 
   async function record(event: React.FormEvent) {
     event.preventDefault()
-    if (!entries || entries.length >= JOURNAL_LIMIT || !rotation || saving) return
+    if (!entries || entries.length >= JOURNAL_LIMIT || !rotation || saving || journalSaving) return
     setSaving(true)
     setError(false)
     try {
@@ -99,7 +101,9 @@ export function TrainingPanel({
       <form onSubmit={record}>
         <fieldset
           className={styles.form}
-          disabled={saving || !entries || entries.length >= JOURNAL_LIMIT || !rotation}
+          disabled={
+            saving || journalSaving || !entries || entries.length >= JOURNAL_LIMIT || !rotation
+          }
         >
           <label>
             {t("training.name")}

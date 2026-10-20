@@ -33,8 +33,10 @@ it("disables the record form while a shared storage lock is pending", async () =
   fireEvent.change(input, { target: { value: "Queued record" } })
   fireEvent.click(screen.getByRole("button", { name: "Save personal record" }))
   expect(input).toBeDisabled()
+  expect(screen.getByLabelText("Observation name")).toBeDisabled()
   await act(async () => release())
   expect(input).not.toBeDisabled()
+  expect(screen.getByLabelText("Observation name")).not.toBeDisabled()
   expect(screen.getByText("Queued record")).toBeTruthy()
 })
 

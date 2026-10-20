@@ -222,7 +222,9 @@ export function ToolsTab({
           <TimingLab />
         </>
       )}
-      {view !== "arena" && <TrainingPanel {...context} entries={entries} onSave={save} />}
+      {view !== "arena" && (
+        <TrainingPanel {...context} entries={entries} onSave={save} journalSaving={saving} />
+      )}
       <section className="panel" aria-label={t("tools.journal")}>
         <h2>{t("tools.journal")}</h2>
         <p>{t("tools.manualNotice")}</p>

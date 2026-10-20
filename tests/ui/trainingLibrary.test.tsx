@@ -105,6 +105,7 @@ it("captures the selected model context and keeps observed numbers separate with
         result={modeled}
         entries={[]}
         onSave={save}
+        journalSaving={false}
       />
     </I18nProvider>,
   )
