@@ -1,9 +1,9 @@
 # PNH-50 browser product completion
 
-PM_STATE_SNAPSHOT v7 - 2026-10-20. Supersedes v6 and v5 below for current scope, authority and launch state. Mutable facts require re-verification.
+PM_STATE_SNAPSHOT v8 - 2026-10-20. Supersedes v7, v6 and v5 below for current scope, authority and launch state. Mutable facts require re-verification.
 
 GOAL: finish all applicable source-independent PNH-50/11/12/13/14 browser engineering and independently sourced PNH-9 numerical qualification; complete regression, preservation, independent review, CI, browser QA and release preflight before conditional deployment to the existing wonton-wwm project.
-CURRENT_GATE: FINAL_ENGINEERING_CHECKS_THEN_SOURCE_EVIDENCE_HOLD
+CURRENT_GATE: SOURCE_EVIDENCE_HOLD
 ACCEPTANCE: full product BLOCKED by numerical/source qualification; final engineering/CI receipts must still be verified before handoff.
 WORKTREE: E:/AIProjects/repository/pnh-50-free-web-toolkit-20261016
 BRANCH: PNHD/pnh-50-free-web-toolkit-20261016
@@ -13,6 +13,7 @@ VERIFIED_REMOTE: PNHD/where-winds-meet-dps Draft PR5 remains the single owning d
 VERIFIED_BASELINE_CHECKS: final-manifest.json and final-r3-validation.json record full Windows regression, formatting, lint, types and build PASS at74952e3c. Older Windows timeout observations remain historical evidence, not this baseline's current result.
 OWNER_DIRECTIVE: current conversation OWNER OVERRIDE 2026-10-20 authorizes continuous reversible local D0-D2 engineering and conditional existing-project deployment only after complete acceptance. The previous PARTIAL return instruction is superseded. No authorization to deploy a partial candidate, fabricate sources, copy GPL/protected data, merge PRs, destroy data, acquire credentials or spend.
 SURFACE: ORCA_CODEX; single implementation writer, same worktree/session continuity.
+CURRENT_CONTINUATION_SESSION: 01a1588c-6c74-7a23-bfcf-51006c72b6fc
 ACCOUNT_POLICY: AUTO_HEADROOM; current Orca account quota usable at recovery (16% session used, 2% weekly used). No account/runtime configuration changed.
 TRACKER: Linear PNH-50 issue and comments calls return UNAUTHORIZED / reauthentication required. Local reports are authoritative for current engineering; external synchronization SYNC_PENDING. This does not block local work.
 STORAGE_ROUTE: existing repo reports plus adjacent evidence, zero Airtable creates.
@@ -20,8 +21,9 @@ SOURCE_OF_TRUTH: current Git, tested working diff and exact receipts; v5/source 
 EVIDENCE_URI: E:/AIProjects/repository/pnh-50-continuation-evidence-20261020/
 COMPLETED_ENGINEERING: Library reference route, context-bound private Training observations and exact private context downloads, explicit reviewed cross-profile gear copies, manual Arena/GvG mode separation and additive journal compatibility. Independent P2 provenance finding repaired; route reuse defect repaired using keyed workspace mounts. Engine/calibrated fixtures, profile schema29 and eight-piece/40-word Graduation remain unchanged.
 VERIFIED_CHECKPOINTS: b6fa4479 full3668/3668, format/lint/types/build PASS; aba7eea7 built-browser workflows1440/375/390 PASS with native context downloads, calculator preservation, gear-copy semantics,16-second popup absence and no horizontal overflow. Independent read-only review PASS throughaba7eea7. Final exact-head engineering and CI evidence belongs to the adjacent manifest, not this checkpoint prose.
+FINAL_CHECK_DISCREPANCY: 770413a3 Windows full3666/3668 (two unchanged5000ms deadline failures), format/lint/types/build PASS; exact-ref Linux CI39402095690 SUCCESS3668/3668. Keep both receipts. Last delta changes only canonical/social/robots/sitemap host metadata and root reports; application source/tests remain identical to the reviewed/browser-tested source. Its build/CI readback is required before handoff.
 PRODUCTION_AFTER_READ: 2026-10-20T09:26:50Z, verified BrowserSkill5a91e763, script-free/robots.txt: all four accepted calculator values byte-identical, schema29,21 items/eight equipped, zero storage writes.
-RELEASE_PREFLIGHT: existing wonton-wwm target verified, automatic deployments Disabled, no deploy hooks; GitHub hooks empty. Wrangler target corrected locally to wonton-wwm. Current deployment list still starts67170a11/15d9bc7. No deployment, merge, new backend, credentials or account/settings change performed.
+RELEASE_PREFLIGHT: existing wonton-wwm target verified, automatic deployments Disabled, no deploy hooks; GitHub hooks empty. Wrangler target and canonical/social/robots/sitemap hosts corrected locally to wonton-wwm. Current deployment list still starts67170a11/15d9bc7. No deployment, merge, new backend, credentials or account/settings change performed.
 SOURCE_GATES: independently reusable complete Global2.3 coefficients, hit/cancel/resource transitions and matched rotations for six absent paths; independently measured Jade anchor; source/dependency-complete changed timeline/Qi and numerical food/progression/set models. Reassess sources; do not borrow numbers from availability flags or relative patch deltas.
 NEXT_ACTION: verify final unchanged engineering and exact-head Draft PR CI receipts; then acquire the independently reusable Global2.3 numerical/measurement package listed in source-research.md before accepting dependent timeline/Qi/schema or eleven-path output. Do not deploy this incomplete product.
 NEXT_LAUNCH: ORCA_CODEX:AUTO_HEADROOM:RESUME

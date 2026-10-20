@@ -18,6 +18,8 @@ Independent read-only review found and closed a P2 Training provenance issue: la
 
 Fresh production-origin script-free read confirms all four calculator values byte-identical to the accepted backup, schema29,21 items/eight equipped, zero storage writes. Cloudflare currently has automatic deployments disabled and no deploy hooks; the pushed repository is different from the connected legacy repository. Existing credentials were usable for read-only deployment inventory. Wrangler's default project name was corrected towonton-wwm so a future explicit, accepted deployment targets the owner's existing project; no deployment was attempted. Final release preflight is HOLD because missing numerical/source acceptance remains substantive.
 
+The later exact-ref770413a3 Windows run retained3666/3668 with unchanged default5000ms deadlines in sampled-proc convergence and module-before-barrel loading; format/lint/types/build passed. Its independent Linux CI39402095690 passed3668/3668. The earlierb6fa4479 Windows full PASS does not replace this later failure, and CI does not erase it. Final metadata correction changes only canonical/social/robots/sitemap URLs to the owner's existing domain, preserving all application/test bytes; the adjacent final build/CI receipts qualify that successor. The comment pass ran; no new explanatory source comments or numerical baseline changes were introduced.
+
 ## Historical acceptance interpretation (superseded where stated above)
 
 2026-10-19. Overall product acceptance: **PARTIAL / source qualification HOLD**. Merge, main changes, tags/releases and ALL Cloudflare deployments remain forbidden. A green engineering gate is not release authorization or eleven-path completion.

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /ocr/
 
-Sitemap: https://where-winds-meet-dps.pages.dev/sitemap.xml
+Sitemap: https://wonton-wwm.pages.dev/sitemap.xml
