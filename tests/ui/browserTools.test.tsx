@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
-import { beforeEach, expect, it } from "vitest"
+import { beforeEach, expect, it, vi } from "vitest"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
 import { ConfirmProvider } from "../../src/ui/components/confirm-dialog/ConfirmDialog"
 import { ToolsTab } from "../../src/ui/features/tools/tools-tab/ToolsTab"
@@ -38,6 +38,47 @@ it("disables the record form while a shared storage lock is pending", async () =
   expect(input).not.toBeDisabled()
   expect(screen.getByLabelText("Observation name")).not.toBeDisabled()
   expect(screen.getByText("Queued record")).toBeTruthy()
+})
+
+it("reserves the shared journal before hashing a measurement and refuses a reverse competing submit", async () => {
+  let release!: (value: ArrayBuffer) => void
+  const originalCrypto = globalThis.crypto
+  const digest = vi.fn(
+    () =>
+      new Promise<ArrayBuffer>((resolve) => {
+        release = resolve
+      }),
+  )
+  vi.stubGlobal("crypto", { subtle: { digest }, randomUUID: () => originalCrypto.randomUUID() })
+  try {
+    open()
+    const journalName = screen.getByLabelText("Label, banner or opponent alias")
+    fireEvent.change(journalName, { target: { value: "Competing record" } })
+    for (const [label, value] of [
+      ["Observation name", "Delayed hash observation"],
+      ["Game region and patch", "Global 2.3"],
+      ["Target, mode and conditions", "Controlled dummy"],
+      ["Observed total damage", "12000"],
+      ["Observed duration (seconds)", "30"],
+      ["Measurement evidence URL", "https://example.org/measurement"],
+    ])
+      fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    fireEvent.click(screen.getByRole("button", { name: "Record measurement" }))
+    await waitFor(() => expect(digest).toHaveBeenCalledTimes(1))
+    expect(journalName).toBeDisabled()
+    expect(screen.getByLabelText("Observation name")).toBeDisabled()
+    fireEvent.submit(journalName.closest("form")!)
+    expect(localStorage.getItem(TOOLKIT_KEY)).toBeNull()
+    await act(async () => release(new ArrayBuffer(32)))
+    await screen.findByText("Delayed hash observation")
+    expect(parseJournal(localStorage.getItem(TOOLKIT_KEY)!)).toMatchObject([
+      { kind: "training", name: "Delayed hash observation" },
+    ])
+    expect(journalName).not.toBeDisabled()
+    expect(screen.getByLabelText("Observation name")).not.toBeDisabled()
+  } finally {
+    vi.unstubAllGlobals()
+  }
 })
 
 it("previews a supported Unicode journal file above 300 KB without writing before confirmation", async () => {

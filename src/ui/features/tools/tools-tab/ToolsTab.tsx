@@ -17,6 +17,7 @@ import {
   remainingSeconds,
   writeJournal,
   type JournalEntry,
+  type JournalUpdate,
 } from "../toolkitJournal"
 import styles from "./ToolsTab.module.scss"
 import { TimingLab } from "../timing-lab/TimingLab"
@@ -73,6 +74,7 @@ const ERROR_KEYS: Record<string, string> = {
   "tools.storageConflict": "tools.storageConflict",
   "tools.storageFailed": "tools.storageFailed",
   "tools.lockUnavailable": "tools.lockUnavailable",
+  "tools.recordBusy": "tools.recordBusy",
 }
 
 function readJournal() {
@@ -110,16 +112,22 @@ export function ToolsTab({
   const [now, setNow] = useState(Date.now)
   const input = useRef<HTMLInputElement>(null)
   const importGeneration = useRef(0)
+  const savePending = useRef(false)
   const entries = journal.entries
   useEffect(() => {
     const tick = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(tick)
   }, [])
 
-  async function save(next: JournalEntry[]) {
-    if (saving) return false
+  async function save(update: JournalUpdate) {
+    if (savePending.current) {
+      setError("tools.recordBusy")
+      return false
+    }
+    savePending.current = true
     setSaving(true)
     try {
+      const next = typeof update === "function" ? await update() : update
       const raw = await writeJournal(next, journal.raw)
       setJournal({ entries: next, raw, error: "" })
       setError("")
@@ -133,6 +141,7 @@ export function ToolsTab({
       )
       return false
     } finally {
+      savePending.current = false
       setSaving(false)
     }
   }

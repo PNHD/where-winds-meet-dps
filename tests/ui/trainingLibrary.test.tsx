@@ -1,5 +1,5 @@
 import { webcrypto } from "node:crypto"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { I18nProvider } from "../../src/i18n/I18nProvider"
@@ -13,6 +13,7 @@ import {
   writeJournal,
   TOOLKIT_KEY,
   type JournalEntry,
+  type JournalUpdate,
 } from "../../src/ui/features/tools/toolkitJournal"
 import { installTestLocks } from "./toolkitTestLocks"
 import type { Result, GearPiece } from "../../src/engine/types"
@@ -93,7 +94,9 @@ it("captures the selected model context and keeps observed numbers separate with
   inputs.customBuffs = [makeBuff(inputs.classId, { name: "Private custom content" })]
   const original = structuredClone(inputs)
   const download = vi.spyOn(journal, "downloadJson").mockImplementation(() => {})
-  const save = vi.fn(async (records: JournalEntry[]) => {
+  let records: JournalEntry[] = []
+  const save = vi.fn(async (update: JournalUpdate) => {
+    records = typeof update === "function" ? await update() : update
     parseJournal(journalText(records))
     return true
   })
@@ -119,8 +122,9 @@ it("captures the selected model context and keeps observed numbers separate with
   ])
     fireEvent.change(screen.getByLabelText(label), { target: { value } })
   fireEvent.click(screen.getByRole("button", { name: "Record measurement" }))
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
-  const captured = save.mock.calls[0][0][0]
+  await screen.findByRole("button", { name: "Download last recorded model context" })
+  expect(save).toHaveBeenCalledTimes(1)
+  const captured = records[0]
   expect(captured).toMatchObject({
     kind: "training",
     classId: inputs.classId,

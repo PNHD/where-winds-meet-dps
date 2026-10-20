@@ -9,6 +9,7 @@ import {
   downloadJson,
   localCalendarDate,
   type JournalEntry,
+  type JournalUpdate,
 } from "../toolkitJournal"
 import styles from "../tools-tab/ToolsTab.module.scss"
 
@@ -27,7 +28,7 @@ export function TrainingPanel({
   journalSaving,
 }: TrainingContext & {
   entries: JournalEntry[] | null
-  onSave: (entries: JournalEntry[]) => Promise<boolean>
+  onSave: (update: JournalUpdate) => Promise<boolean>
   journalSaving: boolean
 }) {
   const { t } = useI18n()
@@ -39,18 +40,15 @@ export function TrainingPanel({
   const [source, setSource] = useState("")
   const [note, setNote] = useState("")
   const [date, setDate] = useState(localCalendarDate)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(false)
   const [contextExport, setContextExport] = useState<string | null>(null)
   const rotation = activeRotationForInputs(inputs)
   const classDef = classDefinition(inputs.classId)
 
   async function record(event: React.FormEvent) {
     event.preventDefault()
-    if (!entries || entries.length >= JOURNAL_LIMIT || !rotation || saving || journalSaving) return
-    setSaving(true)
-    setError(false)
-    try {
+    if (!entries || entries.length >= JOURNAL_LIMIT || !rotation || journalSaving) return
+    let recordedContext: string | null = null
+    const saved = await onSave(async () => {
       const inputsJson = JSON.stringify(inputs)
       const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(inputsJson))
       const fingerprint = Array.from(new Uint8Array(bytes), (byte) =>
@@ -74,18 +72,15 @@ export function TrainingPanel({
         source: source.trim(),
         note,
       }
-      const saved = await onSave([...entries, observation])
-      if (saved) {
-        setContextExport(JSON.stringify({ v: 1, observation, inputsJson }, null, 2))
-        setName("")
-        setDamage("")
-        setDuration("")
-        setNote("")
-      }
-    } catch {
-      setError(true)
-    } finally {
-      setSaving(false)
+      recordedContext = JSON.stringify({ v: 1, observation, inputsJson }, null, 2)
+      return [...entries, observation]
+    })
+    if (saved && recordedContext) {
+      setContextExport(recordedContext)
+      setName("")
+      setDamage("")
+      setDuration("")
+      setNote("")
     }
   }
 
@@ -101,9 +96,7 @@ export function TrainingPanel({
       <form onSubmit={record}>
         <fieldset
           className={styles.form}
-          disabled={
-            saving || journalSaving || !entries || entries.length >= JOURNAL_LIMIT || !rotation
-          }
+          disabled={journalSaving || !entries || entries.length >= JOURNAL_LIMIT || !rotation}
         >
           <label>
             {t("training.name")}
@@ -188,7 +181,6 @@ export function TrainingPanel({
           </button>
         </fieldset>
       </form>
-      {error && <p role="alert">{t("tools.storageFailed")}</p>}
       {contextExport && (
         <button
           type="button"

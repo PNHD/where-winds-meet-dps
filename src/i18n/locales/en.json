@@ -2285,6 +2285,7 @@
   "tools.previewLimit": "Local preview limit: 120 graphemes and 480 text units. These are tool limits, not verified game limits.",
   "tools.privacy": "Free guest tools. Personal records stay in this browser; backups download only when you choose. No account or installation is required.",
   "tools.record": "Save personal record",
+  "tools.recordBusy": "Another record is being prepared or saved. Wait for it to finish.",
   "tools.recovery": "Remaining recovery after impact (ms)",
   "tools.reload": "Reload local journal",
   "tools.restore": "Import journal backup",

@@ -40,6 +40,8 @@ export type JournalEntry =
       mode?: (typeof MATCH_MODES)[number]
     }
 
+export type JournalUpdate = JournalEntry[] | (() => Promise<JournalEntry[]>)
+
 export function parseJournal(text: string): JournalEntry[] {
   if (text.length > JOURNAL_MAX_CHARS) throw new Error("tools.invalidBackup")
   const parsed: unknown = JSON.parse(text, (key, value: unknown) => {

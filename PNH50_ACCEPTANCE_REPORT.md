@@ -22,6 +22,8 @@ The later exact-ref770413a3 Windows run retained3666/3668 with unchanged default
 
 Metadata successor b989081d also passed CI39402733482. Broader browser regression then passed profile import, sharing/map, measurement and gear/worker scripts but exposed a pending-state affordance: Training remained editable while the same journal waited on a lock. The follow-up propagates that shared pending state into both the Training fieldset and submit guard, with a focused assertion that both record forms disable and re-enable. This is the last application delta; final follow-up receipts remain authoritative. The earlier failing browser attempt is retained, not replaced by a claimed pass.
 
+All six broader browser scripts passed atffe2c7bb, along with the new workflows at1440/375/390. A subsequent independent P2 review identified the reverse interleaving during fingerprint computation. Preparation now runs inside the parent's shared save operation, reserving the synchronous pending guard before the first await; both forms remain disabled through preparation, Web Locks and persistence. The held-digest regression explicitly attempts the competing submit and verifies one observation, no competing record, then re-enabled controls. Focused28/28 passed; final immutable-ref receipts must close this repair before handoff.
+
 ## Historical acceptance interpretation (superseded where stated above)
 
 2026-10-19. Overall product acceptance: **PARTIAL / source qualification HOLD**. Merge, main changes, tags/releases and ALL Cloudflare deployments remain forbidden. A green engineering gate is not release authorization or eleven-path completion.
