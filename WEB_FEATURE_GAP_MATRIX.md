@@ -1,6 +1,6 @@
 # PNH-50 consolidated capability and source qualification
 
-2026-10-19. Supersedes mutable acceptance/permission statements in the retained October16 audit below. Current authority permits only the sanitized PNH-50 task branch, one Draft PR and its CI. No merge, main changes or deployment.
+2026-10-20. The current owner override authorizes continued local engineering and conditional deployment to the existing wonton-wwm project only after full acceptance. The single sanitized PNH-50 Draft PR/CI is preserved. Numerical/source acceptance is incomplete; never deploy the partial candidate. No merge/main/release permission is inferred.
 
 The complete Linear consolidated task and PNH-9 were reread through the reconnected connector. Pinned two-source groups, dependencies and deferrals are in [UPSTREAM_SYNC_MATRIX.md](UPSTREAM_SYNC_MATRIX.md). Raw complete local diffs cover 1,014 MIT and 118 GPL changed paths; GPL remains research-only.
 
@@ -49,6 +49,9 @@ Relative patch deltas, repository availability flags and copyrighted implementat
 | HTTP estimate | Opt-in bounded same-origin credential-free estimate, cancellation/timeouts retained | Not game UDP ping or a qualified regional game-server estimate |
 | Map | User-owned/licensed PNG plus image-bound personal markers/completion and journal backup retained | No bundled game map/coordinate catalogue or live-player API; image reattachment required |
 | Optimizers | Existing aggregate Graduation/Stat Lab preserved; Best Build budget presets/cancellation and visible inventory sweeps added | Coupled new timeline/Qi, set/food model, extra encounter families and current-patch recalibration deferred as documented |
+| Library / Training | Searchable pinned model references, selected class/rotation context, existing previewed private-profile import, separate user observations and exact private input-context download | Observations are not independent validation; Jade and current-patch anchors remain missing. Advanced legacy/community parity is not asserted |
+| Shared local gear | Review another saved profile's gear and explicitly add an independent copy to the current draft; new ID, original rolls/history/unknown metadata preserved, no auto-equip | No canonical synchronized physical-inventory migration; existing saved profiles remain owners of their gear |
+| Arena / GvG records | Dedicated manual timing/match view with explicit1v1/3v3/GvG/other/unknown modes and existing personal deadlines; legacy mode-less records retained | Numerical normalization, priority/stagger/move datasets, official schedules and advanced competitive model acceptance remain source-qualified boundaries |
 
 Browser-only/free guest contract unchanged: no EXE, mandatory extension, paid account, ads, subscriptions or donation UI. Production storage was read-only and byte-identical; raw payloads remain outside Git. Final browser/CI acceptance belongs to the final receipt, not historical October16 screenshots.
 
